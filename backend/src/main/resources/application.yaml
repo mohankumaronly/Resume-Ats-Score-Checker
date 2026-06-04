@@ -28,4 +28,4 @@ groq:
 
 latex:
   temp:
-    dir: ${LATEX_TEMP_DIR:/tmp/latex-resumes}
+    dir: ${LATEX_TEMP_DIR:C:/temp/latex-resumes}

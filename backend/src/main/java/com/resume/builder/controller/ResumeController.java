@@ -26,4 +26,19 @@ public class ResumeController {
         ResumeResponseDTO response = resumeService.getJobStatus(jobId);
         return ResponseEntity.ok(response);
     }
-}   
+
+    @GetMapping("/download/{fileName}")
+    public ResponseEntity<byte[]> downloadPdf(@PathVariable String fileName) {
+        try {
+            String filePath = "generated-pdfs/" + fileName;
+            byte[] pdfBytes = java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(filePath));
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+}
