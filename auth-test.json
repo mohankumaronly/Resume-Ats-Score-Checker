@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Resume Builder API",
-    "description": "Authentication + Resume CRUD + Template APIs for Resume Builder",
+    "description": "Authentication + Resume CRUD + Template + AI APIs for Resume Builder",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -228,6 +228,34 @@
               "host": ["localhost"],
               "port": "8080",
               "path": ["api", "resumes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI APIs",
+      "item": [
+        {
+          "name": "Improve Resume",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"targetRole\": \"Java Backend Developer\",\n    \"experienceLevel\": \"fresher\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/ai/resumes/1/improve",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "ai", "resumes", "1", "improve"]
             }
           }
         }

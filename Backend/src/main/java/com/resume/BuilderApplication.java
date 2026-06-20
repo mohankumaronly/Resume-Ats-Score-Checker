@@ -18,6 +18,7 @@ public class BuilderApplication {
 		System.setProperty("BREVO_USERNAME", dotenv.get("BREVO_USERNAME"));
 		System.setProperty("BREVO_SMTP_KEY", dotenv.get("BREVO_SMTP_KEY"));
 		System.setProperty("JWT_SECRET", dotenv.get("JWT_SECRET"));
+		System.setProperty("GROQ_API_KEY", dotenv.get("GROQ_API_KEY"));
 
 		SpringApplication.run(BuilderApplication.class, args);
 	}
