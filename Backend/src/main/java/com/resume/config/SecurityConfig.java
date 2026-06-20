@@ -23,7 +23,10 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/send-otp", "/api/auth/verify-otp").permitAll()
+                        .requestMatchers(
+                                "/api/auth/send-otp",
+                                "/api/auth/verify-otp"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->

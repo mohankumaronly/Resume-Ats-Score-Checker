@@ -1,83 +1,181 @@
 {
   "info": {
-    "name": "Resume Builder Auth API",
-    "description": "Authentication APIs for Resume Builder",
+    "name": "Resume Builder API",
+    "description": "Authentication + Resume CRUD APIs for Resume Builder",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Send OTP",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+      "name": "Auth APIs",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"your_email@example.com\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/send-otp",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "auth", "send-otp"]
+            }
           }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"your_email@example.com\"\n}"
         },
-        "url": {
-          "raw": "http://localhost:8080/api/auth/send-otp",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["api", "auth", "send-otp"]
-        }
-      }
-    },
-    {
-      "name": "Verify OTP",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"your_email@example.com\",\n    \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/verify-otp",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "auth", "verify-otp"]
+            }
           }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"your_email@example.com\",\n    \"otp\": \"123456\"\n}"
         },
-        "url": {
-          "raw": "http://localhost:8080/api/auth/verify-otp",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["api", "auth", "verify-otp"]
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/auth/me",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/auth/logout",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "auth", "logout"]
+            }
+          }
         }
-      }
+      ]
     },
     {
-      "name": "Get Current User",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/auth/me",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["api", "auth", "me"]
+      "name": "Resume APIs",
+      "item": [
+        {
+          "name": "Create Resume",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Software Engineer Resume\",\n    \"templateId\": \"modern-1\",\n    \"resumeDataJson\": \"{\\\"personalInfo\\\":{\\\"fullName\\\":\\\"Mohan Kumar\\\",\\\"email\\\":\\\"mohan@gmail.com\\\",\\\"phone\\\":\\\"9876543210\\\",\\\"location\\\":\\\"Bangalore\\\"},\\\"skills\\\":[\\\"Java\\\",\\\"Spring Boot\\\",\\\"React\\\"],\\\"summary\\\":\\\"Java and Spring Boot developer with 2 years experience.\\\"}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/resumes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "resumes"]
+            }
+          }
+        },
+        {
+          "name": "Get All Resumes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/resumes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "resumes"]
+            }
+          }
+        },
+        {
+          "name": "Get Resume By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/resumes/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "resumes", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Resume",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Senior Software Engineer Resume\",\n    \"templateId\": \"modern-2\",\n    \"resumeDataJson\": \"{\\\"personalInfo\\\":{\\\"fullName\\\":\\\"Mohan Kumar\\\",\\\"email\\\":\\\"mohan@gmail.com\\\",\\\"phone\\\":\\\"9876543210\\\",\\\"location\\\":\\\"Bangalore\\\",\\\"linkedin\\\":\\\"linkedin.com/in/mohan\\\"},\\\"skills\\\":[\\\"Java\\\",\\\"Spring Boot\\\",\\\"React\\\",\\\"Docker\\\"],\\\"summary\\\":\\\"Senior Java and Spring Boot developer with 4 years experience.\\\"}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/resumes/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "resumes", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Resume",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/resumes/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "resumes", "1"]
+            }
+          }
         }
-      }
-    },
-    {
-      "name": "Logout",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/auth/logout",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8080",
-          "path": ["api", "auth", "logout"]
-        }
-      }
+      ]
     }
   ]
 }
