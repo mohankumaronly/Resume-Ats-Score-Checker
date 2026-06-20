@@ -1,4 +1,4 @@
-package com.resume.builder;
+package com.resume;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
@@ -15,6 +15,9 @@ public class BuilderApplication {
 		System.setProperty("DB_URL", dotenv.get("DB_URL"));
 		System.setProperty("DB_USERNAME", dotenv.get("DB_USERNAME"));
 		System.setProperty("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
+		System.setProperty("BREVO_USERNAME", dotenv.get("BREVO_USERNAME"));
+		System.setProperty("BREVO_SMTP_KEY", dotenv.get("BREVO_SMTP_KEY"));
+		System.setProperty("JWT_SECRET", dotenv.get("JWT_SECRET"));
 
 		SpringApplication.run(BuilderApplication.class, args);
 	}
