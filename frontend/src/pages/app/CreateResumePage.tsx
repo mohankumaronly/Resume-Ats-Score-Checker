@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Save, User, Mail, Phone, MapPin, Code} from "lucide-react";
+import { ArrowLeft, Save, User, Mail, Phone, MapPin, Code, Sparkles, Link2} from "lucide-react";
 import { resumeService } from "../../services/resume.service";
 import { templateService } from "../../services/template.service";
 // import { Template } from "../../types/template";
@@ -14,8 +14,9 @@ import TextArea from "../../components/common/TextArea";
 import Card from "../../components/common/Card";
 import Loader from "../../components/common/Loader";
 import Badge from "../../components/common/Badge";
-import type { Template } from "../../types/template";
+import toast from "react-hot-toast";
 import type { ResumeData } from "../../types/resume";
+import type { Template } from "../../types/template";
 
 const createResumeSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -24,6 +25,7 @@ const createResumeSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().min(1, "Phone number is required"),
   location: z.string().min(1, "Location is required"),
+  linkedin: z.string().optional(),
   summary: z.string().min(10, "Summary must be at least 10 characters"),
   skills: z.string().min(1, "At least one skill is required"),
 });
@@ -36,6 +38,8 @@ const CreateResumePage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("modern-1");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const templateParam = searchParams.get("template");
 
   const {
     register,
@@ -46,7 +50,7 @@ const CreateResumePage: React.FC = () => {
   } = useForm<CreateResumeFormData>({
     resolver: zodResolver(createResumeSchema),
     defaultValues: {
-      templateId: "modern-1",
+      templateId: templateParam || "modern-1",
     },
   });
 
@@ -54,16 +58,24 @@ const CreateResumePage: React.FC = () => {
     loadTemplates();
   }, []);
 
+  useEffect(() => {
+    if (templateParam) {
+      setSelectedTemplate(templateParam);
+      setValue("templateId", templateParam);
+    }
+  }, [templateParam, setValue]);
+
   const loadTemplates = async () => {
     try {
       const data = await templateService.getAllTemplates();
       setTemplates(data);
-      if (data.length > 0) {
+      if (data.length > 0 && !templateParam) {
         setSelectedTemplate(data[0].id);
         setValue("templateId", data[0].id);
       }
     } catch (error) {
       console.error("Error loading templates:", error);
+      toast.error("Failed to load templates");
     } finally {
       setIsLoading(false);
     }
@@ -78,6 +90,7 @@ const CreateResumePage: React.FC = () => {
           email: data.email,
           phone: data.phone,
           location: data.location,
+          linkedin: data.linkedin || "",
         },
         skills: data.skills.split(",").map((s) => s.trim()).filter(Boolean),
         summary: data.summary,
@@ -90,10 +103,13 @@ const CreateResumePage: React.FC = () => {
       };
 
       const result = await resumeService.createResume(payload);
-      navigate(`/resumes/${result.id}`);
+      toast.success("Resume created successfully! 🎉");
+      
+      // Navigate to editor page with the new resume ID
+      navigate(`/resumes/${result.id}/edit`);
     } catch (error) {
       console.error("Error creating resume:", error);
-      alert("Failed to create resume. Please try again.");
+      toast.error("Failed to create resume. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -137,10 +153,10 @@ const CreateResumePage: React.FC = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Form */}
+        {/* Form - Left Side */}
         <div className="lg:col-span-2">
           <form id="create-resume-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Resume Title */}
+            {/* Card 1: Resume Details */}
             <Card>
               <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 Resume Details
@@ -153,7 +169,7 @@ const CreateResumePage: React.FC = () => {
               />
             </Card>
 
-            {/* Template Selection */}
+            {/* Card 2: Template Selection */}
             <Card>
               <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 Select Template
@@ -199,7 +215,7 @@ const CreateResumePage: React.FC = () => {
               )}
             </Card>
 
-            {/* Personal Information */}
+            {/* Card 3: Personal Information */}
             <Card>
               <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 Personal Information
@@ -234,10 +250,17 @@ const CreateResumePage: React.FC = () => {
                   error={errors.location?.message}
                   {...register("location")}
                 />
+                <Input
+                  label="LinkedIn Profile (Optional)"
+                  placeholder="linkedin.com/in/johndoe"
+                  icon={<Link2 className="h-4 w-4" />}
+                  error={errors.linkedin?.message}
+                  {...register("linkedin")}
+                />
               </div>
             </Card>
 
-            {/* Professional Summary */}
+            {/* Card 4: Professional Summary */}
             <Card>
               <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 Professional Summary
@@ -250,7 +273,7 @@ const CreateResumePage: React.FC = () => {
               />
             </Card>
 
-            {/* Skills */}
+            {/* Card 5: Skills */}
             <Card>
               <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 Skills
@@ -268,7 +291,7 @@ const CreateResumePage: React.FC = () => {
           </form>
         </div>
 
-        {/* Live Preview */}
+        {/* Live Preview - Right Side */}
         <div className="lg:col-span-1">
           <Card className="sticky top-4">
             <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
@@ -284,11 +307,14 @@ const CreateResumePage: React.FC = () => {
                     <p>{watch("email") || "email@example.com"}</p>
                     <p>{watch("phone") || "+1 234 567 890"}</p>
                     <p>{watch("location") || "City, Country"}</p>
+                    {watch("linkedin") && (
+                      <p className="text-primary-600">{watch("linkedin")}</p>
+                    )}
                   </div>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Summary</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-3">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-4">
                     {watch("summary") || "Your professional summary will appear here..."}
                   </p>
                 </div>

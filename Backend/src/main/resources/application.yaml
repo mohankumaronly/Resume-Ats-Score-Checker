@@ -14,6 +14,11 @@ spring:
         format_sql: true
     open-in-view: false
 
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+
   mail:
     host: smtp-relay.brevo.com
     port: 587

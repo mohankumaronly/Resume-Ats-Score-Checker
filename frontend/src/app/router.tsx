@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import PublicLayout from "../components/layout/PublicLayout";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import EditorLayout from "../components/layout/EditorLayout";
 import LandingPage from "../pages/public/LandingPage";
 import LoginPage from "../pages/auth/LoginPage";
 import VerifyOtpPage from "../pages/auth/VerifyOtpPage";
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
     path: "/",
     element: <ProtectedRoute />,
     children: [
+      // Dashboard routes (with sidebar)
       {
         path: "dashboard",
         element: <DashboardLayout />,
@@ -56,22 +58,23 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        path: "resumes/:resumeId",
-        element: <DashboardLayout />,
-        children: [
-          {
-            index: true,
-            element: <ResumeEditorPage />,
-          },
-        ],
-      },
-      {
         path: "templates",
         element: <DashboardLayout />,
         children: [
           {
             index: true,
             element: <TemplatesPage />,
+          },
+        ],
+      },
+      // Editor routes (FULL PAGE - NO SIDEBAR)
+      {
+        path: "resumes/:resumeId/edit",
+        element: <EditorLayout />,
+        children: [
+          {
+            index: true,
+            element: <ResumeEditorPage />,
           },
         ],
       },

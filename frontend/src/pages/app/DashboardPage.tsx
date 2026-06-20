@@ -50,9 +50,9 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleEdit = (id: number) => {
-    navigate(`/resumes/${id}`);
-  };
+const handleEdit = (id: number) => {
+  navigate(`/resumes/${id}/edit`);
+};
 
   const handleCreate = () => {
     navigate("/resumes/new");

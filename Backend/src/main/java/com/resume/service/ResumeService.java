@@ -8,12 +8,8 @@ import com.resume.entity.Resume;
 import com.resume.entity.User;
 import com.resume.exception.ResumeNotFoundException;
 import com.resume.exception.TemplateNotFoundException;
-import com.resume.exception.UserNotFoundException;
 import com.resume.repository.ResumeRepository;
-import com.resume.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,16 +21,8 @@ import java.util.stream.Collectors;
 public class ResumeService {
 
     private final ResumeRepository resumeRepository;
-    private final UserRepository userRepository;
+    private final AuthHelperService authHelperService;
     private final TemplateService templateService;
-
-    private User getCurrentLoggedInUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
-    }
 
     @Transactional
     public ResumeResponse createResume(CreateResumeRequest request) {
@@ -43,7 +31,7 @@ public class ResumeService {
             throw new TemplateNotFoundException("Template not found with id: " + request.getTemplateId());
         }
 
-        User currentUser = getCurrentLoggedInUser();
+        User currentUser = authHelperService.getCurrentLoggedInUser();
 
         Resume resume = new Resume();
         resume.setTitle(request.getTitle());
@@ -57,7 +45,7 @@ public class ResumeService {
     }
 
     public List<ResumeSummaryResponse> getAllResumes() {
-        User currentUser = getCurrentLoggedInUser();
+        User currentUser = authHelperService.getCurrentLoggedInUser();
 
         return resumeRepository.findAllByUserIdOrderByUpdatedAtDesc(currentUser.getId())
                 .stream()
@@ -66,7 +54,7 @@ public class ResumeService {
     }
 
     public ResumeResponse getResumeById(Long resumeId) {
-        User currentUser = getCurrentLoggedInUser();
+        User currentUser = authHelperService.getCurrentLoggedInUser();
 
         Resume resume = resumeRepository.findByIdAndUserId(resumeId, currentUser.getId())
                 .orElseThrow(() -> new ResumeNotFoundException("Resume not found with id: " + resumeId));
@@ -81,7 +69,7 @@ public class ResumeService {
             throw new TemplateNotFoundException("Template not found with id: " + request.getTemplateId());
         }
 
-        User currentUser = getCurrentLoggedInUser();
+        User currentUser = authHelperService.getCurrentLoggedInUser();
 
         Resume resume = resumeRepository.findByIdAndUserId(resumeId, currentUser.getId())
                 .orElseThrow(() -> new ResumeNotFoundException("Resume not found with id: " + resumeId));
@@ -97,7 +85,7 @@ public class ResumeService {
 
     @Transactional
     public void deleteResume(Long resumeId) {
-        User currentUser = getCurrentLoggedInUser();
+        User currentUser = authHelperService.getCurrentLoggedInUser();
 
         Resume resume = resumeRepository.findByIdAndUserId(resumeId, currentUser.getId())
                 .orElseThrow(() -> new ResumeNotFoundException("Resume not found with id: " + resumeId));
