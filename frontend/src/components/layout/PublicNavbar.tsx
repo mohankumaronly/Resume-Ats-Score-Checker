@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { cn } from "../../utils/cn";
 import { motion } from "framer-motion";
-import { Menu, X, FileText, Sparkles, LayoutTemplate, LogIn } from "lucide-react";
+import { Menu, X, FileText, LogIn } from "lucide-react";
 import ThemeToggle from "../common/ThemeToggle";
 import Button from "../common/Button";
 

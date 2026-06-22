@@ -26,7 +26,6 @@ const createResumeSchema = z.object({
   location: z.string().min(1, "Location is required"),
   linkedin: z.string().optional(),
   summary: z.string().min(10, "Summary must be at least 10 characters"),
-  // Skills now as comma-separated strings for grouped skills
   skillLanguages: z.string().optional(),
   skillFrontend: z.string().optional(),
   skillBackend: z.string().optional(),
@@ -40,7 +39,7 @@ const CreateResumePage: React.FC = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("modern-1");
+  const [, setSelectedTemplate] = useState<string>("modern-1");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const templateParam = searchParams.get("template");
