@@ -79,7 +79,7 @@ const ResumeEditorPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("modern-1");
+  // const [setSelectedTemplate] = useState<string>("modern-1");
   const [lastSaved, setLastSaved] = useState<string>("");
   const [activeSection, setActiveSection] = useState<string>("personal");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -88,14 +88,13 @@ const ResumeEditorPage: React.FC = () => {
   const [experienceItems, setExperienceItems] = useState<ExperienceItem[]>([]);
   const [educationItems, setEducationItems] = useState<EducationItem[]>([]);
   const [projectItems, setProjectItems] = useState<ProjectItem[]>([]);
-  const [certificationItems, setCertificationItems] = useState<string[]>([]);
+  // const [setCertificationItems] = useState<string[]>([]);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isDirty },
     watch,
-    setValue,
     reset,
     getValues,
   } = useForm<ResumeEditorFormData>({
@@ -128,11 +127,11 @@ const ResumeEditorPage: React.FC = () => {
       const parsedRaw = JSON.parse(resume.resumeDataJson);
       const parsedData = normalizeResumeData(parsedRaw);
 
-      setSelectedTemplate(resume.templateId);
-      setExperienceItems(parsedData.experience || []);
-      setEducationItems(parsedData.education || []);
-      setProjectItems(parsedData.projects || []);
-      setCertificationItems(parsedData.certifications || []);
+      // setSelectedTemplate(resume.templateId);
+      // setExperienceItems(parsedData.experience || []);
+      // setEducationItems(parsedData.education || []);
+      // setProjectItems(parsedData.projects || []);
+      // setCertificationItems(parsedData.certifications || []);
 
       // Populate form
       reset({
@@ -245,7 +244,7 @@ const ResumeEditorPage: React.FC = () => {
       setExperienceItems(normalized.experience || []);
       setEducationItems(normalized.education || []);
       setProjectItems(normalized.projects || []);
-      setCertificationItems(normalized.certifications || []);
+      // setCertificationItems(normalized.certifications || []);
 
       reset({
         ...getValues(),
@@ -289,7 +288,7 @@ const ResumeEditorPage: React.FC = () => {
   const watchedSkillBackend = watch("skillBackend");
   const watchedSkillDatabases = watch("skillDatabases");
   const watchedSkillTools = watch("skillTools");
-  const watchedCertifications = watch("certifications");
+  // const watchedCertification = watch("certifications");
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
