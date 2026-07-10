@@ -1,0 +1,209 @@
+{
+  "info": {
+    "name": "Resume Analyzer API",
+    "description": "API for analyzing resumes using Groq AI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response contains success message\", function () {",
+              "    pm.response.to.have.body(\"Resume Analyzer API is running!\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/resume/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "resume", "health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Analyze Resume",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has required fields\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('atsScore');",
+              "    pm.expect(jsonData).to.have.property('feedback');",
+              "    pm.expect(jsonData).to.have.property('strengths');",
+              "    pm.expect(jsonData).to.have.property('weaknesses');",
+              "    pm.expect(jsonData).to.have.property('suggestions');",
+              "});",
+              "",
+              "pm.test(\"ATS Score is between 0 and 100\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.atsScore).to.be.at.least(0);",
+              "    pm.expect(jsonData.atsScore).to.be.at.most(100);",
+              "});",
+              "",
+              "pm.test(\"Strengths is an array\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.strengths).to.be.an('array');",
+              "});",
+              "",
+              "pm.test(\"Weaknesses is an array\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.weaknesses).to.be.an('array');",
+              "});",
+              "",
+              "pm.test(\"Suggestions is an array\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.suggestions).to.be.an('array');",
+              "});",
+              "",
+              "pm.test(\"Feedback is a string\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.feedback).to.be.a('string');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "resume",
+              "type": "file",
+              "src": "C:/Users/mohan/Downloads/sample-resume.pdf"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/resume/analyze",
+          "host": ["{{base_url}}"],
+          "path": ["api", "resume", "analyze"]
+        },
+        "description": "Upload a PDF resume for AI analysis. The response will include ATS score, strengths, weaknesses, and improvement suggestions."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "resume",
+                  "type": "file",
+                  "src": "sample-resume.pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/resume/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["api", "resume", "analyze"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"atsScore\": 85,\n  \"feedback\": \"Strong technical background with good project experience. Consider adding more quantifiable achievements.\",\n  \"strengths\": [\n    \"Strong Java and Spring Boot experience\",\n    \"Good understanding of microservices architecture\",\n    \"React frontend skills demonstrated\"\n  ],\n  \"weaknesses\": [\n    \"No cloud platform experience mentioned (AWS/Azure/GCP)\",\n    \"Missing measurable achievements in work experience\",\n    \"No certifications listed\"\n  ],\n  \"suggestions\": [\n    \"Add specific metrics to your work experience (e.g., 'Improved performance by 30%')\",\n    \"Include relevant certifications (AWS Certified Developer, Java certifications)\",\n    \"Add a skills section with keywords matching job descriptions\"\n  ]\n}"
+        },
+        {
+          "name": "Error - No File",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            },
+            "url": {
+              "raw": "{{base_url}}/api/resume/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["api", "resume", "analyze"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "text",
+          "header": [],
+          "cookie": [],
+          "body": "Please upload a valid PDF file."
+        },
+        {
+          "name": "Error - File Too Large",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "resume",
+                  "type": "file",
+                  "src": "large-file.pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/resume/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["api", "resume", "analyze"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"timestamp\": \"2024-01-15T10:30:00\",\n  \"status\": 400,\n  \"error\": \"File Too Large\",\n  \"message\": \"The uploaded file exceeds the maximum allowed size of 5MB.\"\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "id": "base_url",
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}
