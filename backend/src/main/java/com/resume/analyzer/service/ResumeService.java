@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class ResumeService {
@@ -22,7 +24,7 @@ public class ResumeService {
     private final ObjectMapper objectMapper;
 
     private static final int DEFAULT_CONFIDENCE = 85;
-    private static final int MIN_ATS_FRIENDLY_SCORE = 70;
+    private static final int MIN_ATS_FRIENDLY_SCORE = 55;
 
     @Autowired
     public ResumeService(PdfService pdfService, GroqService groqService) {
@@ -31,48 +33,27 @@ public class ResumeService {
         this.objectMapper = new ObjectMapper();
     }
 
-    /**
-     * Analyzes a resume PDF file end-to-end
-     *
-     * @param file The uploaded PDF file
-     * @return Enhanced ResumeResponse containing the analysis
-     * @throws Exception if processing fails at any step
-     */
     public ResumeResponse analyzeResume(MultipartFile file) throws Exception {
         try {
-            // Step 1: Extract text from PDF
             String extractedText = pdfService.extractText(file);
-
-            // Step 2: Send to Groq for AI analysis
             GroqResponse groqResponse = groqService.analyzeResume(extractedText);
-
-            // Step 3: Parse and structure the response
             return parseGroqResponse(groqResponse);
-
         } catch (Exception e) {
             throw new Exception("Failed to analyze resume: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Parses the Groq API response and converts to ResumeResponse
-     */
     private ResumeResponse parseGroqResponse(GroqResponse groqResponse) throws Exception {
         try {
             String content = extractContentFromGroqResponse(groqResponse);
             String jsonContent = extractJsonFromContent(content);
             JsonNode rootNode = objectMapper.readTree(jsonContent);
-
             return buildResumeResponse(rootNode);
-
         } catch (Exception e) {
             throw new Exception("Failed to parse AI response: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Extracts content from Groq response
-     */
     private String extractContentFromGroqResponse(GroqResponse groqResponse) {
         if (groqResponse.getChoices() == null || groqResponse.getChoices().isEmpty()) {
             throw new IllegalStateException("No choices returned from Groq API");
@@ -80,25 +61,50 @@ public class ResumeService {
         return groqResponse.getChoices().get(0).getMessage().getContent();
     }
 
-    /**
-     * Extracts JSON from content that might be wrapped in markdown code blocks
-     */
     private String extractJsonFromContent(String content) {
-        return content.replaceAll("```json\\s*", "")
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalStateException("Empty response from AI");
+        }
+
+        // Remove markdown code blocks
+        String cleaned = content.replaceAll("```json\\s*", "")
                 .replaceAll("```\\s*", "")
                 .trim();
+
+        // Try to find JSON object using regex
+        Pattern pattern = Pattern.compile("\\{[\\s\\S]*\\}");
+        Matcher matcher = pattern.matcher(cleaned);
+        if (matcher.find()) {
+            cleaned = matcher.group();
+        }
+
+        // Fix common JSON issues
+        cleaned = cleanJson(cleaned);
+
+        return cleaned;
     }
 
-    /**
-     * Builds ResumeResponse from JSON node
-     */
+    private String cleanJson(String json) {
+        // Remove trailing commas
+        json = json.replaceAll(",\\s*}", "}");
+        json = json.replaceAll(",\\s*]", "]");
+
+        // Fix unquoted property names
+        json = json.replaceAll("([{,])\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*:", "$1\"$2\":");
+
+        // Fix single quotes to double quotes
+        json = json.replaceAll("'([^']*)'", "\"$1\"");
+
+        return json.trim();
+    }
+
     private ResumeResponse buildResumeResponse(JsonNode rootNode) {
-        Integer atsScore = extractAtsScore(rootNode);
-        String overallRating = extractOverallRating(rootNode, atsScore);
+        Map<String, Integer> sectionScores = extractSectionScores(rootNode);
+        Integer normalizedScore = calculateScoreFromSections(sectionScores);
+
+        String overallRating = deriveOverallRating(normalizedScore);
         String summary = extractSummary(rootNode);
         String detailedFeedback = extractDetailedFeedback(rootNode);
-
-        Map<String, Integer> sectionScores = extractSectionScores(rootNode);
 
         List<String> strengths = extractList(rootNode, "strengths");
         List<String> weaknesses = extractList(rootNode, "weaknesses");
@@ -107,128 +113,136 @@ public class ResumeService {
         List<String> grammarIssues = extractList(rootNode, "grammarIssues");
         List<String> suggestions = extractList(rootNode, "suggestions");
 
-        Boolean atsFriendly = extractAtsFriendly(rootNode, atsScore);
+        Boolean atsFriendly = normalizedScore >= MIN_ATS_FRIENDLY_SCORE;
         Integer analysisConfidence = extractConfidence(rootNode);
         LocalDateTime analyzedAt = LocalDateTime.now();
 
         return new ResumeResponse(
-                atsScore, overallRating, summary, detailedFeedback,
+                normalizedScore, overallRating, summary, detailedFeedback,
                 sectionScores, strengths, weaknesses, missingKeywords,
                 recommendedSkills, grammarIssues, suggestions,
                 atsFriendly, analysisConfidence, analyzedAt
         );
     }
 
-    /**
-     * Extracts ATS score from JSON
-     */
-    private Integer extractAtsScore(JsonNode rootNode) {
-        return rootNode.has("atsScore") ? rootNode.get("atsScore").asInt() : 0;
-    }
-
-    /**
-     * Extracts overall rating from JSON or derives from score
-     */
-    private String extractOverallRating(JsonNode rootNode, Integer atsScore) {
-        if (rootNode.has("overallRating")) {
-            return rootNode.get("overallRating").asText();
+    private Integer calculateScoreFromSections(Map<String, Integer> sectionScores) {
+        // Calculate weighted average from section scores
+        int total = 0;
+        int count = 0;
+        for (Integer score : sectionScores.values()) {
+            total += score;
+            count++;
         }
-        return deriveOverallRating(atsScore);
+
+        if (count == 0) return 50;
+
+        int avgScore = total / count;
+
+        // Apply penalties for weak sections
+        int projectScore = sectionScores.getOrDefault("projects", 0);
+        int experienceScore = sectionScores.getOrDefault("experience", 0);
+
+        int penalty = 0;
+        if (projectScore < 30) penalty += 15;
+        if (experienceScore < 30) penalty += 15;
+        if (projectScore < 50 && projectScore >= 30) penalty += 8;
+        if (experienceScore < 50 && experienceScore >= 30) penalty += 8;
+
+        int finalScore = avgScore - penalty;
+
+        // Ensure score is within range
+        if (finalScore > 95) return 95;
+        if (finalScore < 20) return 20;
+        return finalScore;
     }
 
-    /**
-     * Derives overall rating from ATS score
-     */
     private String deriveOverallRating(Integer atsScore) {
-        if (atsScore >= 90) return "Excellent";
-        if (atsScore >= 80) return "Very Good";
-        if (atsScore >= 70) return "Good";
-        if (atsScore >= 60) return "Average";
+        if (atsScore >= 85) return "Excellent";
+        if (atsScore >= 75) return "Very Good";
+        if (atsScore >= 65) return "Good";
+        if (atsScore >= 50) return "Average";
         return "Needs Improvement";
     }
 
-    /**
-     * Extracts summary from JSON
-     */
     private String extractSummary(JsonNode rootNode) {
-        return rootNode.has("summary")
-                ? rootNode.get("summary").asText()
-                : "Resume analysis completed.";
+        if (rootNode != null && rootNode.has("summary")) {
+            try {
+                return rootNode.get("summary").asText();
+            } catch (Exception e) {
+                return "Resume analysis completed.";
+            }
+        }
+        return "Resume analysis completed.";
     }
 
-    /**
-     * Extracts detailed feedback from JSON
-     */
     private String extractDetailedFeedback(JsonNode rootNode) {
-        return rootNode.has("detailedFeedback")
-                ? rootNode.get("detailedFeedback").asText()
-                : "No detailed feedback provided.";
+        if (rootNode != null && rootNode.has("detailedFeedback")) {
+            try {
+                return rootNode.get("detailedFeedback").asText();
+            } catch (Exception e) {
+                return "No detailed feedback provided.";
+            }
+        }
+        return "No detailed feedback provided.";
     }
 
-    /**
-     * Extracts section scores from JSON with defaults
-     */
     private Map<String, Integer> extractSectionScores(JsonNode rootNode) {
         Map<String, Integer> scores = new HashMap<>();
 
-        if (rootNode.has("sectionScores") && rootNode.get("sectionScores").isObject()) {
+        if (rootNode != null && rootNode.has("sectionScores") && rootNode.get("sectionScores").isObject()) {
             JsonNode scoresNode = rootNode.get("sectionScores");
-            scores.put("formatting", getScoreOrDefault(scoresNode, "formatting", 70));
-            scores.put("technicalSkills", getScoreOrDefault(scoresNode, "technicalSkills", 70));
-            scores.put("experience", getScoreOrDefault(scoresNode, "experience", 70));
-            scores.put("projects", getScoreOrDefault(scoresNode, "projects", 70));
-            scores.put("education", getScoreOrDefault(scoresNode, "education", 70));
-            scores.put("keywords", getScoreOrDefault(scoresNode, "keywords", 70));
+            scores.put("formatting", getScoreOrDefault(scoresNode, "formatting", 50));
+            scores.put("technicalSkills", getScoreOrDefault(scoresNode, "technicalSkills", 50));
+            scores.put("experience", getScoreOrDefault(scoresNode, "experience", 50));
+            scores.put("projects", getScoreOrDefault(scoresNode, "projects", 50));
+            scores.put("education", getScoreOrDefault(scoresNode, "education", 50));
+            scores.put("keywords", getScoreOrDefault(scoresNode, "keywords", 50));
         } else {
-            // Default scores if sectionScores is missing
-            scores.put("formatting", 70);
-            scores.put("technicalSkills", 70);
-            scores.put("experience", 70);
-            scores.put("projects", 70);
-            scores.put("education", 70);
-            scores.put("keywords", 70);
+            scores.put("formatting", 50);
+            scores.put("technicalSkills", 50);
+            scores.put("experience", 50);
+            scores.put("projects", 50);
+            scores.put("education", 50);
+            scores.put("keywords", 50);
         }
 
         return scores;
     }
 
-    /**
-     * Gets score from JSON node or returns default
-     */
     private Integer getScoreOrDefault(JsonNode node, String fieldName, int defaultValue) {
-        return node.has(fieldName) ? node.get(fieldName).asInt() : defaultValue;
+        if (node != null && node.has(fieldName)) {
+            try {
+                return node.get(fieldName).asInt();
+            } catch (Exception e) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
     }
 
-    /**
-     * Extracts a list from JSON node
-     */
     private List<String> extractList(JsonNode rootNode, String fieldName) {
         List<String> list = new ArrayList<>();
-        if (rootNode.has(fieldName) && rootNode.get(fieldName).isArray()) {
-            JsonNode arrayNode = rootNode.get(fieldName);
-            for (JsonNode item : arrayNode) {
-                list.add(item.asText());
+        if (rootNode != null && rootNode.has(fieldName) && rootNode.get(fieldName).isArray()) {
+            try {
+                JsonNode arrayNode = rootNode.get(fieldName);
+                for (JsonNode item : arrayNode) {
+                    list.add(item.asText());
+                }
+            } catch (Exception e) {
+                // Return empty list if parsing fails
             }
         }
         return list;
     }
 
-    /**
-     * Extracts ATS friendly flag from JSON or derives from score
-     */
-    private Boolean extractAtsFriendly(JsonNode rootNode, Integer atsScore) {
-        if (rootNode.has("atsFriendly")) {
-            return rootNode.get("atsFriendly").asBoolean();
-        }
-        return atsScore >= MIN_ATS_FRIENDLY_SCORE;
-    }
-
-    /**
-     * Extracts confidence level from JSON or returns default
-     */
     private Integer extractConfidence(JsonNode rootNode) {
-        return rootNode.has("analysisConfidence")
-                ? rootNode.get("analysisConfidence").asInt()
-                : DEFAULT_CONFIDENCE;
+        if (rootNode != null && rootNode.has("analysisConfidence")) {
+            try {
+                return rootNode.get("analysisConfidence").asInt();
+            } catch (Exception e) {
+                return DEFAULT_CONFIDENCE;
+            }
+        }
+        return DEFAULT_CONFIDENCE;
     }
 }
