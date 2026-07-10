@@ -10,11 +10,16 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class GroqService {
+
+    private static final double DEFAULT_TEMPERATURE = 0.3;
+    private static final int DEFAULT_MAX_TOKENS = 1500;
+    private static final String SYSTEM_ROLE = "system";
+    private static final String USER_ROLE = "user";
 
     @Value("${groq.api.key}")
     private String apiKey;
@@ -22,7 +27,7 @@ public class GroqService {
     @Value("${groq.api.url}")
     private String apiUrl;
 
-    @Value("${groq.model:mixtral-8x7b-32768}")
+    @Value("${groq.model:llama-3.3-70b-versatile}")
     private String model;
 
     private final RestTemplate restTemplate;
@@ -33,49 +38,19 @@ public class GroqService {
     }
 
     /**
-     * Sends resume text to Groq API for analysis
+     * Sends resume text to Groq API for AI analysis
      *
      * @param resumeText The extracted text from the resume
-     * @return The AI analysis response
+     * @return GroqResponse containing the AI analysis
      * @throws Exception if the API call fails
      */
     public GroqResponse analyzeResume(String resumeText) throws Exception {
         try {
-            // Build the prompt
             String prompt = buildPrompt(resumeText);
+            GroqRequest request = buildGroqRequest(prompt);
+            HttpEntity<GroqRequest> httpEntity = buildHttpEntity(request);
 
-            // Create request body
-// In GroqService.java, update this section:
-            GroqRequest request = new GroqRequest.Builder()
-                    .model(model)
-                    .message("system", "You are an expert ATS (Applicant Tracking System) resume analyzer with 10+ years of experience in HR and recruitment.")
-                    .message("user", prompt)
-                    .temperature(0.7)
-                    .max_tokens(1000)
-                    .build();
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + apiKey);
-
-            // Create HTTP entity
-            HttpEntity<GroqRequest> entity = new HttpEntity<>(request, headers);
-
-            // Make the API call
-            ResponseEntity<GroqResponse> response = restTemplate.exchange(
-                    apiUrl,
-                    HttpMethod.POST,
-                    entity,
-                    GroqResponse.class
-            );
-
-            // Check if response is valid
-            if (response.getBody() == null || response.getBody().getChoices() == null ||
-                    response.getBody().getChoices().isEmpty()) {
-                throw new Exception("Invalid response from Groq API: No choices returned");
-            }
-
-            return response.getBody();
+            return executeApiCall(httpEntity);
 
         } catch (RestClientException e) {
             throw new Exception("Failed to call Groq API: " + e.getMessage(), e);
@@ -90,24 +65,97 @@ public class GroqService {
     private String buildPrompt(String resumeText) {
         return """
                 Analyze the following resume and provide a comprehensive evaluation.
-                
-                Return your response in the following JSON format exactly:
+
+                Return your response in EXACTLY this JSON format:
                 {
                     "atsScore": <number between 0-100>,
-                    "feedback": "<overall feedback summary>",
-                    "strengths": ["strength1", "strength2", ...],
-                    "weaknesses": ["weakness1", "weakness2", ...],
-                    "suggestions": ["suggestion1", "suggestion2", ...]
+                    "overallRating": "<Excellent|Very Good|Good|Average|Needs Improvement>",
+                    "summary": "<2-3 sentence overview of the resume>",
+                    "detailedFeedback": "<Detailed explanation of strengths and areas for improvement>",
+                    "sectionScores": {
+                        "formatting": <0-100>,
+                        "technicalSkills": <0-100>,
+                        "experience": <0-100>,
+                        "projects": <0-100>,
+                        "education": <0-100>,
+                        "keywords": <0-100>
+                    },
+                    "strengths": ["<strength1>", "<strength2>", ...],
+                    "weaknesses": ["<weakness1>", "<weakness2>", ...],
+                    "missingKeywords": ["<keyword1>", "<keyword2>", ...],
+                    "recommendedSkills": ["<skill1>", "<skill2>", ...],
+                    "grammarIssues": ["<issue1>", "<issue2>", ...],
+                    "suggestions": ["<suggestion1>", "<suggestion2>", ...],
+                    "atsFriendly": <true/false>,
+                    "analysisConfidence": <number between 0-100>
                 }
-                
-                Guidelines for evaluation:
-                1. ATS Score: Rate based on keywords, formatting, relevance, and completeness
-                2. Strengths: Highlight strong technical skills, relevant experience, good projects
-                3. Weaknesses: Identify missing keywords, gaps in experience, formatting issues
-                4. Suggestions: Provide actionable improvements including specific keywords to add
-                
+
+                Important Guidelines:
+                1. Base ALL analysis ONLY on the resume content provided
+                2. Do NOT assume skills or experience not mentioned
+                3. Do NOT say a skill is missing if it already exists in the resume
+                4. Be specific and actionable in suggestions
+                5. If a section is empty in the resume, score it lower
+                6. For missingKeywords, only include keywords relevant to the candidate's field
+                7. recommendedSkills should be skills the candidate could learn next
+                8. Grammar issues should be specific, not generic
+                9. analysisConfidence should reflect how confident you are in the analysis
+                10. Do NOT use the candidate's name in the response - keep it generic
+
                 Resume Text:
                 %s
                 """.formatted(resumeText);
+    }
+
+    /**
+     * Builds Groq API request object
+     */
+    private GroqRequest buildGroqRequest(String prompt) {
+        return new GroqRequest.Builder()
+                .model(model)
+                .message(SYSTEM_ROLE, "You are an expert ATS (Applicant Tracking System) resume analyzer with 10+ years of experience in HR and recruitment. You provide detailed, accurate, and actionable feedback.")
+                .message(USER_ROLE, prompt)
+                .temperature(DEFAULT_TEMPERATURE)
+                .max_tokens(DEFAULT_MAX_TOKENS)
+                .build();
+    }
+
+    /**
+     * Builds HTTP entity with headers and request body
+     */
+    private HttpEntity<GroqRequest> buildHttpEntity(GroqRequest request) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(apiKey);
+
+        return new HttpEntity<>(request, headers);
+    }
+
+    /**
+     * Executes the API call to Groq
+     */
+    private GroqResponse executeApiCall(HttpEntity<GroqRequest> httpEntity) throws Exception {
+        ResponseEntity<GroqResponse> response = restTemplate.exchange(
+                apiUrl,
+                HttpMethod.POST,
+                httpEntity,
+                GroqResponse.class
+        );
+
+        validateResponse(response);
+        return response.getBody();
+    }
+
+    /**
+     * Validates the API response
+     */
+    private void validateResponse(ResponseEntity<GroqResponse> response) throws Exception {
+        if (response.getBody() == null) {
+            throw new Exception("Invalid response from Groq API: Response body is null");
+        }
+
+        if (response.getBody().getChoices() == null || response.getBody().getChoices().isEmpty()) {
+            throw new Exception("Invalid response from Groq API: No choices returned");
+        }
     }
 }

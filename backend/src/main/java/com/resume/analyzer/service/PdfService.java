@@ -11,44 +11,77 @@ import java.io.InputStream;
 @Service
 public class PdfService {
 
+    private static final String CONTENT_TYPE_PDF = "application/pdf";
+    private static final int MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
     /**
-     * Extracts text from a PDF file
+     * Extracts and cleans text from a PDF file
      *
      * @param file The uploaded PDF file
-     * @return Extracted text content
+     * @return Cleaned extracted text content
      * @throws Exception if file is not a valid PDF or extraction fails
      */
     public String extractText(MultipartFile file) throws Exception {
-        // Validate that the file is not empty
-        if (file.isEmpty()) {
+        validateFile(file);
+        String rawText = extractRawText(file);
+        return cleanExtractedText(rawText);
+    }
+
+    /**
+     * Validates the uploaded file
+     */
+    private void validateFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File is empty. Please upload a valid PDF.");
         }
 
-        // Validate file type
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.equals("application/pdf")) {
-            throw new IllegalArgumentException("Invalid file type. Please upload a PDF file.");
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("File size exceeds 5MB limit. Please upload a smaller file.");
         }
 
-        // Extract text using PDFBox
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.equals(CONTENT_TYPE_PDF)) {
+            throw new IllegalArgumentException("Invalid file type. Please upload a PDF file.");
+        }
+    }
+
+    /**
+     * Extracts raw text from PDF using Apache PDFBox
+     */
+    private String extractRawText(MultipartFile file) throws Exception {
         try (InputStream inputStream = file.getInputStream();
              PDDocument document = Loader.loadPDF(inputStream.readAllBytes())) {
 
             PDFTextStripper stripper = new PDFTextStripper();
             String extractedText = stripper.getText(document);
 
-            // Remove extra whitespace and normalize the text
-            String cleanedText = extractedText.replaceAll("\\s+", " ").trim();
-
-            // Check if text was actually extracted
-            if (cleanedText.isEmpty()) {
-                throw new IllegalStateException("No text could be extracted from the PDF. The file might be image-based or empty.");
+            if (extractedText == null || extractedText.trim().isEmpty()) {
+                throw new IllegalStateException(
+                        "No text could be extracted from the PDF. The file might be image-based or empty."
+                );
             }
 
-            return cleanedText;
+            return extractedText;
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
-            // Wrap any exception with a meaningful message
             throw new Exception("Failed to extract text from PDF: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Cleans the extracted text by fixing common PDF extraction issues
+     */
+    private String cleanExtractedText(String text) {
+        // Fix hyphenated words split across lines (e.g., "Expe-\nrienced" -> "Experienced")
+        String cleaned = text.replaceAll("(\\w+)-\\s*\\n\\s*(\\w+)", "$1$2");
+
+        // Fix hyphenated words with spaces (e.g., "Expe- rienced" -> "Experienced")
+        cleaned = cleaned.replaceAll("(\\w+)-\\s+(\\w+)", "$1$2");
+
+        // Remove extra whitespace and normalize
+        cleaned = cleaned.replaceAll("\\s+", " ").trim();
+
+        return cleaned;
     }
 }
