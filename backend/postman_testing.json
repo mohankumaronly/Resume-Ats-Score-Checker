@@ -1,124 +1,375 @@
 {
   "info": {
-    "name": "Resume Analyzer API",
-    "description": "API for analyzing resumes using Groq AI",
+    "name": "Resume Analyzer API - Passwordless Auth",
+    "description": "Complete API for resume analysis with OTP-based passwordless authentication using Groq AI",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.0.0"
+    "version": "3.0.0"
   },
   "item": [
     {
-      "name": "Health Check",
-      "event": [
+      "name": "Authentication",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test(\"Response contains success message\", function () {",
-              "    pm.response.to.have.body(\"Resume Analyzer API is running!\");",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{base_url}}/api/resume/health",
-          "host": ["{{base_url}}"],
-          "path": ["api", "resume", "health"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Analyze Resume",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test(\"Response has required fields\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('atsScore');",
-              "    pm.expect(jsonData).to.have.property('feedback');",
-              "    pm.expect(jsonData).to.have.property('strengths');",
-              "    pm.expect(jsonData).to.have.property('weaknesses');",
-              "    pm.expect(jsonData).to.have.property('suggestions');",
-              "});",
-              "",
-              "pm.test(\"ATS Score is between 0 and 100\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.atsScore).to.be.at.least(0);",
-              "    pm.expect(jsonData.atsScore).to.be.at.most(100);",
-              "});",
-              "",
-              "pm.test(\"Strengths is an array\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.strengths).to.be.an('array');",
-              "});",
-              "",
-              "pm.test(\"Weaknesses is an array\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.weaknesses).to.be.an('array');",
-              "});",
-              "",
-              "pm.test(\"Suggestions is an array\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.suggestions).to.be.an('array');",
-              "});",
-              "",
-              "pm.test(\"Feedback is a string\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.feedback).to.be.a('string');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "formdata",
-          "formdata": [
+          "name": "1. Send OTP",
+          "event": [
             {
-              "key": "resume",
-              "type": "file",
-              "src": "C:/Users/mohan/Downloads/sample-resume.pdf"
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"OTP sent successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.message).to.include('OTP sent');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('newUser');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/send-otp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "send-otp"]
+            },
+            "description": "Step 1: Send OTP to email. Only email is required."
+          },
+          "response": [
+            {
+              "name": "Success - New User",
+              "code": 200,
+              "body": "{\n    \"success\": true,\n    \"token\": null,\n    \"email\": \"test@example.com\",\n    \"verified\": false,\n    \"message\": \"OTP sent successfully! Please check your email to verify and complete registration.\",\n    \"newUser\": true\n}"
+            },
+            {
+              "name": "Success - Existing User",
+              "code": 200,
+              "body": "{\n    \"success\": true,\n    \"token\": null,\n    \"email\": \"test@example.com\",\n    \"verified\": true,\n    \"message\": \"OTP sent successfully! Please check your email to login.\",\n    \"newUser\": false\n}"
             }
           ]
         },
-        "url": {
-          "raw": "{{base_url}}/api/resume/analyze",
-          "host": ["{{base_url}}"],
-          "path": ["api", "resume", "analyze"]
-        },
-        "description": "Upload a PDF resume for AI analysis. The response will include ATS score, strengths, weaknesses, and improvement suggestions."
-      },
-      "response": [
         {
-          "name": "Success Response",
-          "originalRequest": {
+          "name": "2. Verify OTP & Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Login successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.message).to.include('Login successful');",
+                  "    pm.expect(jsonData.verified).to.be.true;",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "});",
+                  "",
+                  "if (pm.response.json().token) {",
+                  "    pm.environment.set('auth_token', pm.response.json().token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"test@example.com\",\n    \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/verify-otp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "verify-otp"]
+            },
+            "description": "Step 2: Verify OTP and get JWT token. Replace '123456' with the actual OTP from your email."
+          },
+          "response": [
+            {
+              "name": "Success - New User",
+              "code": 200,
+              "body": "{\n    \"success\": true,\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"email\": \"test@example.com\",\n    \"verified\": true,\n    \"newUser\": true,\n    \"message\": \"Email verified and login successful! Welcome to Resume Analyzer.\"\n}"
+            },
+            {
+              "name": "Success - Existing User",
+              "code": 200,
+              "body": "{\n    \"success\": true,\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"email\": \"test@example.com\",\n    \"verified\": true,\n    \"newUser\": false,\n    \"message\": \"Login successful! Welcome back.\"\n}"
+            },
+            {
+              "name": "Error - Invalid OTP",
+              "code": 400,
+              "body": "{\n    \"success\": false,\n    \"message\": \"Invalid OTP. Please try again.\"\n}"
+            },
+            {
+              "name": "Error - OTP Expired",
+              "code": 400,
+              "body": "{\n    \"success\": false,\n    \"message\": \"OTP has expired. Please request a new OTP.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "3. Resend OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"OTP resent successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.message).to.include('New OTP sent');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
             "method": "POST",
             "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/resend-otp?email=test@example.com",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "resend-otp"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "test@example.com"
+                }
+              ]
+            },
+            "description": "Step 3: Resend OTP if the previous one expired. Use this before Step 2."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "code": 200,
+              "body": "{\n    \"success\": true,\n    \"message\": \"New OTP sent to your email. Please verify within 5 minutes.\",\n    \"email\": \"test@example.com\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "4. Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Logout successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Logged out successfully');",
+                  "});",
+                  "",
+                  "pm.environment.set('auth_token', '');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Step 4: Logout (clears token on client side)."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "code": 200,
+              "body": "{\n    \"message\": \"Logged out successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "5. Get Current User (Protected)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"User authenticated\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.authenticated).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Step 5: Get current user details. Requires authentication token (auto-saved after login)."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "code": 200,
+              "body": "{\n    \"authenticated\": true,\n    \"message\": \"User authenticated\"\n}"
+            },
+            {
+              "name": "Error - Unauthorized",
+              "code": 401,
+              "body": "{\n    \"message\": \"Unauthorized\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Resume Analysis",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains success message\", function () {",
+                  "    pm.response.to.have.body(\"Resume Analyzer API is running!\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/resume/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "resume", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Analyze Resume (Requires Auth)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has required fields\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('atsScore');",
+                  "    pm.expect(jsonData).to.have.property('overallRating');",
+                  "    pm.expect(jsonData).to.have.property('summary');",
+                  "    pm.expect(jsonData).to.have.property('detailedFeedback');",
+                  "    pm.expect(jsonData).to.have.property('sectionScores');",
+                  "    pm.expect(jsonData).to.have.property('strengths');",
+                  "    pm.expect(jsonData).to.have.property('weaknesses');",
+                  "    pm.expect(jsonData).to.have.property('suggestions');",
+                  "    pm.expect(jsonData).to.have.property('missingKeywords');",
+                  "    pm.expect(jsonData).to.have.property('recommendedSkills');",
+                  "    pm.expect(jsonData).to.have.property('atsFriendly');",
+                  "    pm.expect(jsonData).to.have.property('analysisConfidence');",
+                  "});",
+                  "",
+                  "pm.test(\"ATS Score is between 0 and 100\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.atsScore).to.be.at.least(0);",
+                  "    pm.expect(jsonData.atsScore).to.be.at.most(100);",
+                  "});",
+                  "",
+                  "pm.test(\"Section scores exist\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.sectionScores).to.have.property('formatting');",
+                  "    pm.expect(jsonData.sectionScores).to.have.property('technicalSkills');",
+                  "    pm.expect(jsonData.sectionScores).to.have.property('experience');",
+                  "    pm.expect(jsonData.sectionScores).to.have.property('projects');",
+                  "    pm.expect(jsonData.sectionScores).to.have.property('education');",
+                  "    pm.expect(jsonData.sectionScores).to.have.property('keywords');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
                   "key": "resume",
                   "type": "file",
-                  "src": "sample-resume.pdf"
+                  "src": ""
                 }
               ]
             },
@@ -126,74 +377,31 @@
               "raw": "{{base_url}}/api/resume/analyze",
               "host": ["{{base_url}}"],
               "path": ["api", "resume", "analyze"]
-            }
-          },
-          "status": "OK",
-          "code": 200,
-          "_postman_previewlanguage": "json",
-          "header": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "cookie": [],
-          "body": "{\n  \"atsScore\": 85,\n  \"feedback\": \"Strong technical background with good project experience. Consider adding more quantifiable achievements.\",\n  \"strengths\": [\n    \"Strong Java and Spring Boot experience\",\n    \"Good understanding of microservices architecture\",\n    \"React frontend skills demonstrated\"\n  ],\n  \"weaknesses\": [\n    \"No cloud platform experience mentioned (AWS/Azure/GCP)\",\n    \"Missing measurable achievements in work experience\",\n    \"No certifications listed\"\n  ],\n  \"suggestions\": [\n    \"Add specific metrics to your work experience (e.g., 'Improved performance by 30%')\",\n    \"Include relevant certifications (AWS Certified Developer, Java certifications)\",\n    \"Add a skills section with keywords matching job descriptions\"\n  ]\n}"
-        },
-        {
-          "name": "Error - No File",
-          "originalRequest": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "formdata",
-              "formdata": []
             },
-            "url": {
-              "raw": "{{base_url}}/api/resume/analyze",
-              "host": ["{{base_url}}"],
-              "path": ["api", "resume", "analyze"]
-            }
+            "description": "⚠️ Upload a PDF resume for AI analysis. Click 'Select Files' to choose your PDF. Requires authentication token."
           },
-          "status": "Bad Request",
-          "code": 400,
-          "_postman_previewlanguage": "text",
-          "header": [],
-          "cookie": [],
-          "body": "Please upload a valid PDF file."
-        },
-        {
-          "name": "Error - File Too Large",
-          "originalRequest": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "resume",
-                  "type": "file",
-                  "src": "large-file.pdf"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{base_url}}/api/resume/analyze",
-              "host": ["{{base_url}}"],
-              "path": ["api", "resume", "analyze"]
-            }
-          },
-          "status": "Bad Request",
-          "code": 400,
-          "_postman_previewlanguage": "json",
-          "header": [
+          "response": [
             {
-              "key": "Content-Type",
-              "value": "application/json"
+              "name": "Success Response",
+              "code": 200,
+              "body": "{\n    \"atsScore\": 82,\n    \"overallRating\": \"Very Good\",\n    \"summary\": \"Strong Java Full Stack resume with relevant internship experience and impressive project work.\",\n    \"detailedFeedback\": \"Your resume demonstrates solid technical skills in Java, Spring Boot, and React. The LearnFlow project is impressive. However, the internship experience lacks specific metrics.\",\n    \"sectionScores\": {\n        \"formatting\": 90,\n        \"technicalSkills\": 88,\n        \"experience\": 75,\n        \"projects\": 94,\n        \"education\": 80,\n        \"keywords\": 82\n    },\n    \"strengths\": [\n        \"Strong Java and Spring Boot expertise\",\n        \"Full-stack development with React\",\n        \"Impressive SaaS project\"\n    ],\n    \"weaknesses\": [\n        \"Internship experience lacks measurable results\",\n        \"No cloud platform experience\",\n        \"Limited DevOps exposure\"\n    ],\n    \"missingKeywords\": [\n        \"AWS\",\n        \"Docker Compose\",\n        \"CI/CD\",\n        \"JUnit\",\n        \"Microservices\"\n    ],\n    \"recommendedSkills\": [\n        \"AWS or Azure certification\",\n        \"Docker Compose and Kubernetes\",\n        \"Jenkins or GitHub Actions\",\n        \"Redis for caching\"\n    ],\n    \"grammarIssues\": [],\n    \"suggestions\": [\n        \"Add quantifiable achievements: 'Improved API response time by 30%'\",\n        \"Include cloud experience or take a certification\",\n        \"Add specific metrics: 'Managed 10,000+ users'\",\n        \"Consider adding a DevOps section\"\n    ],\n    \"atsFriendly\": true,\n    \"analysisConfidence\": 90,\n    \"analyzedAt\": \"2026-07-11T00:22:17.790677\"\n}"
+            },
+            {
+              "name": "Error - No File",
+              "code": 400,
+              "body": "Please upload a valid PDF file."
+            },
+            {
+              "name": "Error - File Too Large",
+              "code": 400,
+              "body": "{\n    \"timestamp\": \"2024-01-15T10:30:00\",\n    \"status\": 400,\n    \"error\": \"File Too Large\",\n    \"message\": \"The uploaded file exceeds the maximum allowed size of 5MB.\"\n}"
+            },
+            {
+              "name": "Error - Unauthorized",
+              "code": 401,
+              "body": "{\n    \"error\": \"Unauthorized\",\n    \"message\": \"Full authentication is required to access this resource\"\n}"
             }
-          ],
-          "cookie": [],
-          "body": "{\n  \"timestamp\": \"2024-01-15T10:30:00\",\n  \"status\": 400,\n  \"error\": \"File Too Large\",\n  \"message\": \"The uploaded file exceeds the maximum allowed size of 5MB.\"\n}"
+          ]
         }
       ]
     }
@@ -203,6 +411,12 @@
       "id": "base_url",
       "key": "base_url",
       "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "id": "auth_token",
+      "key": "auth_token",
+      "value": "",
       "type": "string"
     }
   ]

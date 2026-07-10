@@ -12,8 +12,12 @@ const Home: React.FC = () => {
     <div className="min-h-screen">
       <Navbar />
       <Hero />
-      <HowItWorks />
-      <Features />
+      <div id="how-it-works">
+        <HowItWorks />
+      </div>
+      <div id="features">
+        <Features />
+      </div>
       <Footer />
     </div>
   );

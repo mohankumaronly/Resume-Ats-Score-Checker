@@ -2,6 +2,32 @@ spring:
   application:
     name: resume-analyzer
 
+  # Database Configuration - Neon PostgreSQL
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+    open-in-view: false
+
   # File upload configuration
   servlet:
     multipart:
@@ -10,6 +36,27 @@ spring:
       max-request-size: 5MB
       file-size-threshold: 2MB
 
+  # Mail Configuration (Brevo SMTP)
+  mail:
+    host: ${BREVO_SMTP_HOST}
+    port: ${BREVO_SMTP_PORT}
+    username: ${BREVO_USERNAME}
+    password: ${BREVO_SMTP_KEY}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+          ssl:
+            trust: ${BREVO_SMTP_HOST}
+
 # Server configuration
 server:
   port: ${SERVER_PORT:8080}
@@ -17,18 +64,37 @@ server:
     include-message: always
     include-binding-errors: always
 
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
+
 # Groq API Configuration
 groq:
   api:
-    key: ${GROQ_API_KEY:}
+    key: ${GROQ_API_KEY}
     url: ${GROQ_API_URL:https://api.groq.com/openai/v1/chat/completions}
-  model: ${GROQ_MODEL:mixtral-8x7b-32768}
+  model: ${GROQ_MODEL:llama-3.3-70b-versatile}
+
+# Brevo Configuration
+brevo:
+  from:
+    email: ${BREVO_FROM_EMAIL}
+    name: ${BREVO_FROM_NAME}
+
+# Application URLs
+app:
+  url: ${APP_URL:http://localhost:8080}
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
 
 # Logging configuration
 logging:
   level:
     com.resume.analyzer: ${LOG_LEVEL:DEBUG}
-    org.springframework.web: INFO
-    org.apache.pdfbox: WARN
+    org.springframework.security: ${SECURITY_LOG_LEVEL:ERROR}
+    org.springframework.web: ${WEB_LOG_LEVEL:INFO}
+    org.springframework.mail: ${MAIL_LOG_LEVEL:DEBUG}
+    org.hibernate.SQL: ${HIBERNATE_LOG_LEVEL:DEBUG}
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
