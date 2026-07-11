@@ -21,4 +21,4 @@ public class AnalyzerApplication {
 
 		SpringApplication.run(AnalyzerApplication.class, args);
 	}
-}	
+}
