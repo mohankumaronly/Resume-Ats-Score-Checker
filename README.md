@@ -256,17 +256,12 @@ Licensed under the MIT License.
 
 ---
 
-# 👨‍💻 Developer
+## 👨‍💻 Connect with Me
 
-**Mohan Kumar**
-
-📧 mohankumaronly81@gmail.com
-
-🐙 GitHub  
-https://github.com/mohankumaronly
-
-💼 LinkedIn  
-https://linkedin.com/in/mohan-kumar
+- 🌐 **Portfolio:** https://mohankumardev.vercel.app
+- 📧 **Email:** mohankumaronly81@gmail.com
+- 🐙 **GitHub:** https://github.com/mohankumaronly
+- 💼 **LinkedIn:** https://www.linkedin.com/in/mohan-kumar-3151a1308
 
 ---
 
