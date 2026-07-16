@@ -14,8 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 public class ResumeService {
@@ -44,28 +42,16 @@ public class ResumeService {
         }
     }
 
-    /**
-     * Analyzes resume against a job description with authentication status
-     */
     public JobMatchResponse analyzeResumeWithJob(MultipartFile file, String jobDescription, boolean isAuthenticated) throws Exception {
         try {
-            // Step 1: Extract text from PDF
             String extractedText = pdfService.extractText(file);
-
-            // Step 2: Send to Groq for job comparison analysis
             GroqResponse groqResponse = groqService.analyzeResumeWithJob(extractedText, jobDescription);
-
-            // Step 3: Parse and structure the response with auth status
             return parseJobMatchResponse(groqResponse, isAuthenticated);
-
         } catch (Exception e) {
             throw new Exception("Failed to analyze resume with job description: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Parses the Groq API response for job matching with auth status
-     */
     private JobMatchResponse parseJobMatchResponse(GroqResponse groqResponse, boolean isAuthenticated) throws Exception {
         try {
             String content = extractContentFromGroqResponse(groqResponse);
@@ -77,29 +63,20 @@ public class ResumeService {
         }
     }
 
-    /**
-     * Builds JobMatchResponse from JSON node with auth status
-     */
     private JobMatchResponse buildJobMatchResponse(JsonNode rootNode, boolean isAuthenticated) {
         JobMatchResponse response = new JobMatchResponse();
 
-        // Basic scores (Always visible)
         response.setAtsScore(extractInt(rootNode, "atsScore"));
         response.setMatchScore(extractInt(rootNode, "matchScore"));
         response.setOverallRating(extractString(rootNode, "overallRating"));
         response.setSummary(extractString(rootNode, "summary"));
-
-        // Job-specific fields (Always visible)
         response.setKeywordMatchRate(extractInt(rootNode, "keywordMatchRate"));
         response.setMissingKeywords(extractList(rootNode, "missingKeywords"));
         response.setSkillsGap(extractSkillsGap(rootNode));
         response.setExperienceMatch(extractString(rootNode, "experienceMatch"));
         response.setEducationMatch(extractString(rootNode, "educationMatch"));
-
-        // Section scores (Always visible)
         response.setSectionScores(extractSectionScores(rootNode));
 
-        // 🔒 LOCKED - Only visible when authenticated
         if (isAuthenticated) {
             response.setStrengths(extractList(rootNode, "strengths"));
             response.setWeaknesses(extractList(rootNode, "weaknesses"));
@@ -114,7 +91,6 @@ public class ResumeService {
             response.setDetailsLocked(true);
         }
 
-        // Other fields
         response.setAtsFriendly(extractBoolean(rootNode, "atsFriendly"));
         response.setAnalysisConfidence(extractInt(rootNode, "analysisConfidence"));
         response.setAnalyzedAt(LocalDateTime.now().toString());
@@ -122,9 +98,6 @@ public class ResumeService {
         return response;
     }
 
-    /**
-     * Extracts skills gap from JSON
-     */
     private Map<String, List<String>> extractSkillsGap(JsonNode rootNode) {
         Map<String, List<String>> skillsGap = new HashMap<>();
         if (rootNode != null && rootNode.has("skillsGap") && rootNode.get("skillsGap").isObject()) {
@@ -136,9 +109,6 @@ public class ResumeService {
         return skillsGap;
     }
 
-    /**
-     * Helper method to extract int from JSON
-     */
     private Integer extractInt(JsonNode node, String field) {
         if (node != null && node.has(field)) {
             try {
@@ -150,9 +120,6 @@ public class ResumeService {
         return 0;
     }
 
-    /**
-     * Helper method to extract string from JSON
-     */
     private String extractString(JsonNode node, String field) {
         if (node != null && node.has(field)) {
             try {
@@ -164,9 +131,6 @@ public class ResumeService {
         return "";
     }
 
-    /**
-     * Helper method to extract boolean from JSON
-     */
     private Boolean extractBoolean(JsonNode node, String field) {
         if (node != null && node.has(field)) {
             try {
@@ -206,31 +170,33 @@ public class ResumeService {
                 .replaceAll("```\\s*", "")
                 .trim();
 
-        // Try to find JSON object using regex
-        Pattern pattern = Pattern.compile("\\{[\\s\\S]*\\}");
-        Matcher matcher = pattern.matcher(cleaned);
-        if (matcher.find()) {
-            cleaned = matcher.group();
+        // Try to find a clean JSON object
+        int start = cleaned.indexOf('{');
+        int end = cleaned.lastIndexOf('}');
+
+        if (start != -1 && end != -1 && end > start) {
+            cleaned = cleaned.substring(start, end + 1);
+        } else {
+            throw new IllegalStateException("No JSON object found in AI response");
         }
 
-        // Fix common JSON issues
-        cleaned = cleanJson(cleaned);
+        // Try to parse directly
+        try {
+            objectMapper.readTree(cleaned);
+            return cleaned;
+        } catch (Exception e) {
+            // Try a more aggressive clean
+            cleaned = cleaned.replaceAll("(?m)^[ \t]*", "");
+            cleaned = cleaned.replaceAll("(?m)[ \t]*$", "");
+            cleaned = cleaned.replaceAll("[\\x00-\\x1F]", "");
 
-        return cleaned;
-    }
-
-    private String cleanJson(String json) {
-        // Remove trailing commas
-        json = json.replaceAll(",\\s*}", "}");
-        json = json.replaceAll(",\\s*]", "]");
-
-        // Fix unquoted property names
-        json = json.replaceAll("([{,])\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*:", "$1\"$2\":");
-
-        // Fix single quotes to double quotes
-        json = json.replaceAll("'([^']*)'", "\"$1\"");
-
-        return json.trim();
+            try {
+                objectMapper.readTree(cleaned);
+                return cleaned;
+            } catch (Exception ex) {
+                throw new IllegalStateException("Invalid JSON format received from AI");
+            }
+        }
     }
 
     private ResumeResponse buildResumeResponse(JsonNode rootNode) {
@@ -261,7 +227,6 @@ public class ResumeService {
     }
 
     private Integer calculateScoreFromSections(Map<String, Integer> sectionScores) {
-        // Calculate weighted average from section scores
         int total = 0;
         int count = 0;
         for (Integer score : sectionScores.values()) {
@@ -272,8 +237,6 @@ public class ResumeService {
         if (count == 0) return 50;
 
         int avgScore = total / count;
-
-        // Apply penalties for weak sections
         int projectScore = sectionScores.getOrDefault("projects", 0);
         int experienceScore = sectionScores.getOrDefault("experience", 0);
 
@@ -285,7 +248,6 @@ public class ResumeService {
 
         int finalScore = avgScore - penalty;
 
-        // Ensure score is within range
         if (finalScore > 95) return 95;
         if (finalScore < 20) return 20;
         return finalScore;

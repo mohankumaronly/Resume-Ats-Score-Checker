@@ -26,9 +26,48 @@ export interface ResumeResponse {
   analyzedAt: string;
 }
 
+// NEW: Job Match Response Interface
+export interface SkillsGap {
+  required: string[];
+  found: string[];
+  missing: string[];
+}
+
+export interface JobMatchResponse {
+  // Overall scores
+  atsScore: number;
+  matchScore: number;
+  overallRating: string;
+  summary: string;
+  
+  // Job-specific analysis
+  keywordMatchRate: number;
+  missingKeywords: string[];
+  skillsGap: SkillsGap;
+  experienceMatch: string;
+  educationMatch: string;
+  
+  // Section scores
+  sectionScores: SectionScores;
+  
+  // Locked/Unlocked fields
+  strengths: string[];
+  weaknesses: string[];
+  suggestions: string[];
+  recommendedSkills: string[];
+  detailsLocked: boolean;
+  
+  // Other fields
+  atsFriendly: boolean;
+  analysisConfidence: number;
+  analyzedAt: string;
+}
+
 export interface UploadState {
   file: File | null;
+  jobDescription: string;
   isUploading: boolean;
   error: string | null;
-  result: ResumeResponse | null;
+  result: ResumeResponse | JobMatchResponse | null;
+  analysisMode: 'generic' | 'job-specific';
 }

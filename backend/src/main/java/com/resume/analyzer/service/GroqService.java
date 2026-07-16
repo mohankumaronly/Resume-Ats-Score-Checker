@@ -16,7 +16,7 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class GroqService {
 
-    private static final double DEFAULT_TEMPERATURE = 0.1;
+    private static final double DEFAULT_TEMPERATURE = 0.01;
     private static final int DEFAULT_MAX_TOKENS = 1500;
     private static final String SYSTEM_ROLE = "system";
     private static final String USER_ROLE = "user";
@@ -37,9 +37,6 @@ public class GroqService {
         this.restTemplate = restTemplate;
     }
 
-    /**
-     * Sends resume text to Groq API for AI analysis (Existing method)
-     */
     public GroqResponse analyzeResume(String resumeText) throws Exception {
         try {
             String prompt = buildPrompt(resumeText);
@@ -53,9 +50,6 @@ public class GroqService {
         }
     }
 
-    /**
-     * NEW METHOD: Sends resume and job description to Groq API for comparison analysis
-     */
     public GroqResponse analyzeResumeWithJob(String resumeText, String jobDescription) throws Exception {
         try {
             String prompt = buildJobComparisonPrompt(resumeText, jobDescription);
@@ -69,50 +63,67 @@ public class GroqService {
         }
     }
 
-    /**
-     * NEW METHOD: Builds the prompt for job comparison analysis
-     */
     private String buildJobComparisonPrompt(String resumeText, String jobDescription) {
         return """
-                You are a strict ATS resume evaluator. Compare the resume against the job description.
+            You are a JSON generator. Return ONLY a valid JSON object with these exact keys. No markdown, no explanations.
 
-                JOB DESCRIPTION:
-                %s
+            The JSON must have these keys with their types:
+            - "atsScore": number (0-100)
+            - "matchScore": number (0-100)
+            - "overallRating": string (one of: "Excellent", "Very Good", "Good", "Average", "Needs Improvement")
+            - "summary": string
+            - "keywordMatchRate": number (0-100)
+            - "missingKeywords": array of strings
+            - "skillsGap": object with "required", "found", "missing" (each is array of strings)
+            - "experienceMatch": string
+            - "educationMatch": string
+            - "sectionScores": object with "formatting", "technicalSkills", "experience", "projects", "education", "keywords" (each is number 0-100)
+            - "strengths": array of strings
+            - "weaknesses": array of strings
+            - "suggestions": array of strings
+            - "recommendedSkills": array of strings
+            - "atsFriendly": boolean
+            - "analysisConfidence": number (0-100)
 
-                RESUME:
-                %s
+            Here is the exact JSON structure:
+            {
+                "atsScore": 85,
+                "matchScore": 80,
+                "overallRating": "Good",
+                "summary": "This is a summary of the match.",
+                "keywordMatchRate": 75,
+                "missingKeywords": ["Keyword1", "Keyword2"],
+                "skillsGap": {
+                    "required": ["Skill1", "Skill2"],
+                    "found": ["Skill1"],
+                    "missing": ["Skill2"]
+                },
+                "experienceMatch": "Experience assessment text.",
+                "educationMatch": "Education assessment text.",
+                "sectionScores": {
+                    "formatting": 80,
+                    "technicalSkills": 75,
+                    "experience": 70,
+                    "projects": 85,
+                    "education": 80,
+                    "keywords": 75
+                },
+                "strengths": ["Strength1", "Strength2"],
+                "weaknesses": ["Weakness1", "Weakness2"],
+                "suggestions": ["Suggestion1", "Suggestion2"],
+                "recommendedSkills": ["Skill1", "Skill2"],
+                "atsFriendly": true,
+                "analysisConfidence": 85
+            }
 
-                Provide a detailed comparison analysis. Return EXACTLY this JSON format:
-                {
-                    "atsScore": <0-100 - Overall ATS score of the resume>,
-                    "matchScore": <0-100 - How well resume matches the job description>,
-                    "overallRating": "<Excellent|Very Good|Good|Average|Needs Improvement>",
-                    "summary": "<2-3 sentence honest comparison overview>",
-                    "keywordMatchRate": <0-100 - Percentage of job keywords found in resume>,
-                    "missingKeywords": ["<keywords from job description not in resume>"],
-                    "skillsGap": {
-                        "required": ["<skills required by the job>"],
-                        "found": ["<skills found in resume that match job>"],
-                        "missing": ["<skills missing from resume that job requires>"]
-                    },
-                    "experienceMatch": "<Detailed assessment of experience alignment with job requirements>",
-                    "educationMatch": "<Detailed assessment of education alignment with job requirements>",
-                    "sectionScores": {
-                        "formatting": <0-100>,
-                        "technicalSkills": <0-100>,
-                        "experience": <0-100>,
-                        "projects": <0-100>,
-                        "education": <0-100>,
-                        "keywords": <0-100>
-                    },
-                    "strengths": ["<what matches well with the job description>"],
-                    "weaknesses": ["<what doesn't match well with the job description>"],
-                    "suggestions": ["<specific improvements for this specific job>"],
-                    "recommendedSkills": ["<skills to learn for this specific role>"],
-                    "atsFriendly": <true/false>,
-                    "analysisConfidence": <0-100>
-                }
-                """.formatted(jobDescription, resumeText);
+            Now analyze this resume against the job description and return ONLY the JSON object.
+
+            JOB DESCRIPTION:
+            %s
+
+            RESUME:
+            %s
+            """.formatted(jobDescription, resumeText);
     }
 
     private String buildPrompt(String resumeText) {

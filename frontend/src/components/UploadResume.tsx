@@ -1,16 +1,24 @@
+// src/components/UploadResume.tsx
+
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FiUpload, FiFile, FiX, FiArrowRight } from 'react-icons/fi';
-import type { ResumeResponse } from '../types/Resume';
+import { FiUpload, FiFile, FiX, FiArrowRight, FiTarget, FiZap } from 'react-icons/fi';
+import type { ResumeResponse, JobMatchResponse } from '../types/Resume';
 import { resumeApi } from '../services/resumeApi';
 import LoadingSpinner from './LoadingSpinner';
 import ResultCard from './ResultCard';
+import JobMatchResult from './JobMatchResult';
+import JobDescriptionInput from './JobDescriptionInput';
+
+type AnalysisMode = 'generic' | 'job-specific';
 
 const UploadResume: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<ResumeResponse | null>(null);
+  const [result, setResult] = useState<ResumeResponse | JobMatchResponse | null>(null);
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('generic');
+  const [jobDescription, setJobDescription] = useState('');
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
@@ -45,7 +53,12 @@ const UploadResume: React.FC = () => {
     setError(null);
 
     try {
-      const response = await resumeApi.analyzeResume(file);
+      let response;
+      if (analysisMode === 'job-specific' && jobDescription.trim()) {
+        response = await resumeApi.analyzeWithJob(file, jobDescription);
+      } else {
+        response = await resumeApi.analyzeResume(file);
+      }
       setResult(response);
     } catch (err: any) {
       setError(err.message || 'Failed to analyze resume. Please try again.');
@@ -58,15 +71,19 @@ const UploadResume: React.FC = () => {
     setFile(null);
     setError(null);
     setResult(null);
+    setJobDescription('');
   };
 
-  // Handle reset from ResultCard
   const handleReset = () => {
     setFile(null);
     setError(null);
     setResult(null);
-    // Scroll to top
+    setJobDescription('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const isJobMatchResult = (result: any): result is JobMatchResponse => {
+    return result && 'matchScore' in result && 'keywordMatchRate' in result;
   };
 
   if (isUploading) {
@@ -74,15 +91,49 @@ const UploadResume: React.FC = () => {
   }
 
   if (result) {
+    if (isJobMatchResult(result)) {
+      return <JobMatchResult result={result} onReset={handleReset} />;
+    }
     return <ResultCard result={result} onReset={handleReset} />;
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4">
+      {/* Analysis Mode Toggle */}
+      <div className="flex items-center justify-center gap-2 mb-6 bg-gray-100 rounded-xl p-1 max-w-md mx-auto">
+        <button
+          onClick={() => setAnalysisMode('generic')}
+          className={`
+            flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
+            ${analysisMode === 'generic' 
+              ? 'bg-blue-600 text-white shadow-md' 
+              : 'text-gray-600 hover:bg-gray-200'
+            }
+          `}
+        >
+          <FiZap className="w-4 h-4" />
+          Generic Analysis
+        </button>
+        <button
+          onClick={() => setAnalysisMode('job-specific')}
+          className={`
+            flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
+            ${analysisMode === 'job-specific' 
+              ? 'bg-blue-600 text-white shadow-md' 
+              : 'text-gray-600 hover:bg-gray-200'
+            }
+          `}
+        >
+          <FiTarget className="w-4 h-4" />
+          Job Specific
+        </button>
+      </div>
+
+      {/* Dropzone */}
       <div
         {...getRootProps()}
         className={`
-          relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer
+          relative border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer
           transition-all duration-300
           ${isDragActive 
             ? 'border-blue-500 bg-blue-50' 
@@ -127,6 +178,16 @@ const UploadResume: React.FC = () => {
         </div>
       </div>
 
+      {/* Job Description Input - Only show in job-specific mode */}
+      {analysisMode === 'job-specific' && (
+        <JobDescriptionInput
+          value={jobDescription}
+          onChange={setJobDescription}
+          disabled={isUploading}
+        />
+      )}
+
+      {/* File info and analyze button */}
       {file && !isUploading && (
         <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -150,7 +211,15 @@ const UploadResume: React.FC = () => {
             </button>
             <button
               onClick={handleAnalyze}
-              className="flex-1 sm:flex-none px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              disabled={analysisMode === 'job-specific' && !jobDescription.trim()}
+              className={`
+                flex-1 sm:flex-none px-6 py-2 rounded-lg 
+                transition-colors flex items-center justify-center gap-2
+                ${analysisMode === 'job-specific' && !jobDescription.trim()
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                }
+              `}
               type="button"
             >
               Analyze Resume
@@ -159,6 +228,23 @@ const UploadResume: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Helper text for job-specific mode */}
+      {analysisMode === 'job-specific' && file && !jobDescription.trim() && (
+        <p className="mt-2 text-sm text-yellow-600 text-center">
+          ⚠️ Please paste a job description for targeted analysis
+        </p>
+      )}
+
+      {/* Mode description */}
+      <div className="mt-4 text-center">
+        <p className="text-xs text-gray-400">
+          {analysisMode === 'generic' 
+            ? '📊 Get a general ATS score and improvement suggestions'
+            : '🎯 Get a targeted match score against your job description'
+          }
+        </p>
+      </div>
     </div>
   );
 };
