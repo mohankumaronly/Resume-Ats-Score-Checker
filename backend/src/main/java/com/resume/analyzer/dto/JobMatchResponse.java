@@ -4,29 +4,32 @@ import java.util.List;
 import java.util.Map;
 
 public class JobMatchResponse {
-    // Overall scores
+    // Overall scores (Public - Always visible)
     private Integer atsScore;
     private Integer matchScore;
     private String overallRating;
     private String summary;
 
-    // Job-specific analysis
+    // Job-specific analysis (Public - Always visible)
     private Integer keywordMatchRate;
     private List<String> missingKeywords;
     private Map<String, List<String>> skillsGap;
     private String experienceMatch;
     private String educationMatch;
 
-    // Section scores
+    // Section scores (Public - Always visible)
     private Map<String, Integer> sectionScores;
 
-    // Lists
+    // 🔒 LOCKED - Only visible when logged in
     private List<String> strengths;
     private List<String> weaknesses;
     private List<String> suggestions;
     private List<String> recommendedSkills;
 
-    // Boolean
+    // Boolean flag - Indicates if detailed feedback is locked
+    private boolean detailsLocked = true;
+
+    // Other fields
     private Boolean atsFriendly;
     private Integer analysisConfidence;
     private String analyzedAt;
@@ -142,6 +145,14 @@ public class JobMatchResponse {
 
     public void setRecommendedSkills(List<String> recommendedSkills) {
         this.recommendedSkills = recommendedSkills;
+    }
+
+    public boolean isDetailsLocked() {
+        return detailsLocked;
+    }
+
+    public void setDetailsLocked(boolean detailsLocked) {
+        this.detailsLocked = detailsLocked;
     }
 
     public Boolean getAtsFriendly() {

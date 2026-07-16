@@ -1,6 +1,7 @@
 package com.resume.analyzer.service;
 
 import com.resume.analyzer.dto.GroqResponse;
+import com.resume.analyzer.dto.JobMatchResponse;
 import com.resume.analyzer.dto.ResumeResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,6 +42,140 @@ public class ResumeService {
         } catch (Exception e) {
             throw new Exception("Failed to analyze resume: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Analyzes resume against a job description with authentication status
+     */
+    public JobMatchResponse analyzeResumeWithJob(MultipartFile file, String jobDescription, boolean isAuthenticated) throws Exception {
+        try {
+            // Step 1: Extract text from PDF
+            String extractedText = pdfService.extractText(file);
+
+            // Step 2: Send to Groq for job comparison analysis
+            GroqResponse groqResponse = groqService.analyzeResumeWithJob(extractedText, jobDescription);
+
+            // Step 3: Parse and structure the response with auth status
+            return parseJobMatchResponse(groqResponse, isAuthenticated);
+
+        } catch (Exception e) {
+            throw new Exception("Failed to analyze resume with job description: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Parses the Groq API response for job matching with auth status
+     */
+    private JobMatchResponse parseJobMatchResponse(GroqResponse groqResponse, boolean isAuthenticated) throws Exception {
+        try {
+            String content = extractContentFromGroqResponse(groqResponse);
+            String jsonContent = extractJsonFromContent(content);
+            JsonNode rootNode = objectMapper.readTree(jsonContent);
+            return buildJobMatchResponse(rootNode, isAuthenticated);
+        } catch (Exception e) {
+            throw new Exception("Failed to parse job match response: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Builds JobMatchResponse from JSON node with auth status
+     */
+    private JobMatchResponse buildJobMatchResponse(JsonNode rootNode, boolean isAuthenticated) {
+        JobMatchResponse response = new JobMatchResponse();
+
+        // Basic scores (Always visible)
+        response.setAtsScore(extractInt(rootNode, "atsScore"));
+        response.setMatchScore(extractInt(rootNode, "matchScore"));
+        response.setOverallRating(extractString(rootNode, "overallRating"));
+        response.setSummary(extractString(rootNode, "summary"));
+
+        // Job-specific fields (Always visible)
+        response.setKeywordMatchRate(extractInt(rootNode, "keywordMatchRate"));
+        response.setMissingKeywords(extractList(rootNode, "missingKeywords"));
+        response.setSkillsGap(extractSkillsGap(rootNode));
+        response.setExperienceMatch(extractString(rootNode, "experienceMatch"));
+        response.setEducationMatch(extractString(rootNode, "educationMatch"));
+
+        // Section scores (Always visible)
+        response.setSectionScores(extractSectionScores(rootNode));
+
+        // 🔒 LOCKED - Only visible when authenticated
+        if (isAuthenticated) {
+            response.setStrengths(extractList(rootNode, "strengths"));
+            response.setWeaknesses(extractList(rootNode, "weaknesses"));
+            response.setSuggestions(extractList(rootNode, "suggestions"));
+            response.setRecommendedSkills(extractList(rootNode, "recommendedSkills"));
+            response.setDetailsLocked(false);
+        } else {
+            response.setStrengths(List.of("🔒 Login to view strengths"));
+            response.setWeaknesses(List.of("🔒 Login to view weaknesses"));
+            response.setSuggestions(List.of("🔒 Login to view suggestions"));
+            response.setRecommendedSkills(List.of("🔒 Login to view recommended skills"));
+            response.setDetailsLocked(true);
+        }
+
+        // Other fields
+        response.setAtsFriendly(extractBoolean(rootNode, "atsFriendly"));
+        response.setAnalysisConfidence(extractInt(rootNode, "analysisConfidence"));
+        response.setAnalyzedAt(LocalDateTime.now().toString());
+
+        return response;
+    }
+
+    /**
+     * Extracts skills gap from JSON
+     */
+    private Map<String, List<String>> extractSkillsGap(JsonNode rootNode) {
+        Map<String, List<String>> skillsGap = new HashMap<>();
+        if (rootNode != null && rootNode.has("skillsGap") && rootNode.get("skillsGap").isObject()) {
+            JsonNode gapNode = rootNode.get("skillsGap");
+            skillsGap.put("required", extractList(gapNode, "required"));
+            skillsGap.put("found", extractList(gapNode, "found"));
+            skillsGap.put("missing", extractList(gapNode, "missing"));
+        }
+        return skillsGap;
+    }
+
+    /**
+     * Helper method to extract int from JSON
+     */
+    private Integer extractInt(JsonNode node, String field) {
+        if (node != null && node.has(field)) {
+            try {
+                return node.get(field).asInt();
+            } catch (Exception e) {
+                return 0;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Helper method to extract string from JSON
+     */
+    private String extractString(JsonNode node, String field) {
+        if (node != null && node.has(field)) {
+            try {
+                return node.get(field).asText();
+            } catch (Exception e) {
+                return "";
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Helper method to extract boolean from JSON
+     */
+    private Boolean extractBoolean(JsonNode node, String field) {
+        if (node != null && node.has(field)) {
+            try {
+                return node.get(field).asBoolean();
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private ResumeResponse parseGroqResponse(GroqResponse groqResponse) throws Exception {

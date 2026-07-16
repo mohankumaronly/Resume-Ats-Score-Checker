@@ -1,9 +1,9 @@
 {
   "info": {
     "name": "Resume Analyzer API - Passwordless Auth",
-    "description": "Complete API for resume analysis with OTP-based passwordless authentication using Groq AI",
+    "description": "Complete API for resume analysis with OTP-based passwordless authentication using Groq AI. Version 2.0 - Added Job Description Matching.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "3.0.0"
+    "version": "4.0.0"
   },
   "item": [
     {
@@ -42,7 +42,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"test@example.com\"\n}"
+              "raw": "{\n    \"email\": \"rockrangerz801@gmail.com\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/auth/send-otp",
@@ -51,18 +51,7 @@
             },
             "description": "Step 1: Send OTP to email. Only email is required."
           },
-          "response": [
-            {
-              "name": "Success - New User",
-              "code": 200,
-              "body": "{\n    \"success\": true,\n    \"token\": null,\n    \"email\": \"test@example.com\",\n    \"verified\": false,\n    \"message\": \"OTP sent successfully! Please check your email to verify and complete registration.\",\n    \"newUser\": true\n}"
-            },
-            {
-              "name": "Success - Existing User",
-              "code": 200,
-              "body": "{\n    \"success\": true,\n    \"token\": null,\n    \"email\": \"test@example.com\",\n    \"verified\": true,\n    \"message\": \"OTP sent successfully! Please check your email to login.\",\n    \"newUser\": false\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "2. Verify OTP & Login",
@@ -102,7 +91,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"test@example.com\",\n    \"otp\": \"123456\"\n}"
+              "raw": "{\n    \"email\": \"rockrangerz801@gmail.com\",\n    \"otp\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/auth/verify-otp",
@@ -111,28 +100,7 @@
             },
             "description": "Step 2: Verify OTP and get JWT token. Replace '123456' with the actual OTP from your email."
           },
-          "response": [
-            {
-              "name": "Success - New User",
-              "code": 200,
-              "body": "{\n    \"success\": true,\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"email\": \"test@example.com\",\n    \"verified\": true,\n    \"newUser\": true,\n    \"message\": \"Email verified and login successful! Welcome to Resume Analyzer.\"\n}"
-            },
-            {
-              "name": "Success - Existing User",
-              "code": 200,
-              "body": "{\n    \"success\": true,\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"email\": \"test@example.com\",\n    \"verified\": true,\n    \"newUser\": false,\n    \"message\": \"Login successful! Welcome back.\"\n}"
-            },
-            {
-              "name": "Error - Invalid OTP",
-              "code": 400,
-              "body": "{\n    \"success\": false,\n    \"message\": \"Invalid OTP. Please try again.\"\n}"
-            },
-            {
-              "name": "Error - OTP Expired",
-              "code": 400,
-              "body": "{\n    \"success\": false,\n    \"message\": \"OTP has expired. Please request a new OTP.\"\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "3. Resend OTP",
@@ -159,119 +127,19 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/auth/resend-otp?email=test@example.com",
+              "raw": "{{base_url}}/api/auth/resend-otp?email=rockrangerz801@gmail.com",
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "resend-otp"],
               "query": [
                 {
                   "key": "email",
-                  "value": "test@example.com"
+                  "value": "rockrangerz801@gmail.com"
                 }
               ]
             },
-            "description": "Step 3: Resend OTP if the previous one expired. Use this before Step 2."
+            "description": "Step 3: Resend OTP if the previous one expired."
           },
-          "response": [
-            {
-              "name": "Success Response",
-              "code": 200,
-              "body": "{\n    \"success\": true,\n    \"message\": \"New OTP sent to your email. Please verify within 5 minutes.\",\n    \"email\": \"test@example.com\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "4. Logout",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test(\"Logout successful\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.message).to.include('Logged out successfully');",
-                  "});",
-                  "",
-                  "pm.environment.set('auth_token', '');"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/auth/logout",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "logout"]
-            },
-            "description": "Step 4: Logout (clears token on client side)."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "code": 200,
-              "body": "{\n    \"message\": \"Logged out successfully\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "5. Get Current User (Protected)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test(\"User authenticated\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.authenticated).to.be.true;",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/auth/me",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "me"]
-            },
-            "description": "Step 5: Get current user details. Requires authentication token (auto-saved after login)."
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "code": 200,
-              "body": "{\n    \"authenticated\": true,\n    \"message\": \"User authenticated\"\n}"
-            },
-            {
-              "name": "Error - Unauthorized",
-              "code": 401,
-              "body": "{\n    \"message\": \"Unauthorized\"\n}"
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -309,7 +177,7 @@
           "response": []
         },
         {
-          "name": "Analyze Resume (Requires Auth)",
+          "name": "1. Analyze Resume (Generic)",
           "event": [
             {
               "listen": "test",
@@ -332,23 +200,6 @@
                   "    pm.expect(jsonData).to.have.property('missingKeywords');",
                   "    pm.expect(jsonData).to.have.property('recommendedSkills');",
                   "    pm.expect(jsonData).to.have.property('atsFriendly');",
-                  "    pm.expect(jsonData).to.have.property('analysisConfidence');",
-                  "});",
-                  "",
-                  "pm.test(\"ATS Score is between 0 and 100\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.atsScore).to.be.at.least(0);",
-                  "    pm.expect(jsonData.atsScore).to.be.at.most(100);",
-                  "});",
-                  "",
-                  "pm.test(\"Section scores exist\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.sectionScores).to.have.property('formatting');",
-                  "    pm.expect(jsonData.sectionScores).to.have.property('technicalSkills');",
-                  "    pm.expect(jsonData.sectionScores).to.have.property('experience');",
-                  "    pm.expect(jsonData.sectionScores).to.have.property('projects');",
-                  "    pm.expect(jsonData.sectionScores).to.have.property('education');",
-                  "    pm.expect(jsonData.sectionScores).to.have.property('keywords');",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -378,13 +229,87 @@
               "host": ["{{base_url}}"],
               "path": ["api", "resume", "analyze"]
             },
-            "description": "⚠️ Upload a PDF resume for AI analysis. Click 'Select Files' to choose your PDF. Requires authentication token."
+            "description": "📄 Upload a PDF resume for generic AI analysis. Click 'Select Files' to choose your PDF. Requires authentication token."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Analyze Resume with Job Description (NEW)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has job match fields\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('atsScore');",
+                  "    pm.expect(jsonData).to.have.property('matchScore');",
+                  "    pm.expect(jsonData).to.have.property('keywordMatchRate');",
+                  "    pm.expect(jsonData).to.have.property('missingKeywords');",
+                  "    pm.expect(jsonData).to.have.property('skillsGap');",
+                  "    pm.expect(jsonData).to.have.property('experienceMatch');",
+                  "    pm.expect(jsonData).to.have.property('educationMatch');",
+                  "    pm.expect(jsonData).to.have.property('strengths');",
+                  "    pm.expect(jsonData).to.have.property('weaknesses');",
+                  "    pm.expect(jsonData).to.have.property('suggestions');",
+                  "});",
+                  "",
+                  "pm.test(\"Match Score is between 0 and 100\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.matchScore).to.be.at.least(0);",
+                  "    pm.expect(jsonData.matchScore).to.be.at.most(100);",
+                  "});",
+                  "",
+                  "pm.test(\"Skills gap has required, found, missing\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.skillsGap).to.have.property('required');",
+                  "    pm.expect(jsonData.skillsGap).to.have.property('found');",
+                  "    pm.expect(jsonData.skillsGap).to.have.property('missing');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "resume",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "jobDescription",
+                  "type": "text",
+                  "value": "Senior Full Stack Developer\n\nWe are looking for a Senior Full Stack Developer with 5+ years of experience in Java, Spring Boot, and React. The ideal candidate should have strong experience with:\n\n- Java 17+, Spring Boot, Spring Security\n- React.js, TypeScript, Tailwind CSS\n- PostgreSQL, MongoDB\n- AWS (EC2, S3, RDS) or Azure\n- Docker, Kubernetes\n- CI/CD pipelines (Jenkins, GitHub Actions)\n- Microservices architecture\n- REST API development\n\nRequirements:\n- Bachelor's degree in Computer Science or related field\n- 5+ years of full-stack development experience\n- Strong problem-solving and communication skills\n- Experience leading technical teams is a plus"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/resume/analyze-with-job",
+              "host": ["{{base_url}}"],
+              "path": ["api", "resume", "analyze-with-job"]
+            },
+            "description": "🎯 NEW: Upload a PDF resume and paste a job description for targeted ATS analysis. Returns match score, keyword match rate, skills gap analysis, and job-specific suggestions. Requires authentication token."
           },
           "response": [
             {
               "name": "Success Response",
               "code": 200,
-              "body": "{\n    \"atsScore\": 82,\n    \"overallRating\": \"Very Good\",\n    \"summary\": \"Strong Java Full Stack resume with relevant internship experience and impressive project work.\",\n    \"detailedFeedback\": \"Your resume demonstrates solid technical skills in Java, Spring Boot, and React. The LearnFlow project is impressive. However, the internship experience lacks specific metrics.\",\n    \"sectionScores\": {\n        \"formatting\": 90,\n        \"technicalSkills\": 88,\n        \"experience\": 75,\n        \"projects\": 94,\n        \"education\": 80,\n        \"keywords\": 82\n    },\n    \"strengths\": [\n        \"Strong Java and Spring Boot expertise\",\n        \"Full-stack development with React\",\n        \"Impressive SaaS project\"\n    ],\n    \"weaknesses\": [\n        \"Internship experience lacks measurable results\",\n        \"No cloud platform experience\",\n        \"Limited DevOps exposure\"\n    ],\n    \"missingKeywords\": [\n        \"AWS\",\n        \"Docker Compose\",\n        \"CI/CD\",\n        \"JUnit\",\n        \"Microservices\"\n    ],\n    \"recommendedSkills\": [\n        \"AWS or Azure certification\",\n        \"Docker Compose and Kubernetes\",\n        \"Jenkins or GitHub Actions\",\n        \"Redis for caching\"\n    ],\n    \"grammarIssues\": [],\n    \"suggestions\": [\n        \"Add quantifiable achievements: 'Improved API response time by 30%'\",\n        \"Include cloud experience or take a certification\",\n        \"Add specific metrics: 'Managed 10,000+ users'\",\n        \"Consider adding a DevOps section\"\n    ],\n    \"atsFriendly\": true,\n    \"analysisConfidence\": 90,\n    \"analyzedAt\": \"2026-07-11T00:22:17.790677\"\n}"
+              "body": "{\n    \"atsScore\": 82,\n    \"matchScore\": 76,\n    \"overallRating\": \"Very Good\",\n    \"summary\": \"Strong technical foundation with good full-stack experience. Missing some cloud and DevOps skills required for the role.\",\n    \"keywordMatchRate\": 72,\n    \"missingKeywords\": [\n        \"AWS\",\n        \"Docker\",\n        \"Kubernetes\",\n        \"CI/CD\",\n        \"Microservices\"\n    ],\n    \"skillsGap\": {\n        \"required\": [\"Java 17+\", \"Spring Boot\", \"React\", \"PostgreSQL\", \"AWS\", \"Docker\", \"Kubernetes\", \"CI/CD\", \"Microservices\"],\n        \"found\": [\"Java\", \"Spring Boot\", \"React\", \"PostgreSQL\"],\n        \"missing\": [\"AWS\", \"Docker\", \"Kubernetes\", \"CI/CD\", \"Microservices\"]\n    },\n    \"experienceMatch\": \"3 years of experience found vs 5+ years required. Good progression but needs more senior-level examples.\",\n    \"educationMatch\": \"Bachelor's degree in Computer Science matches the requirement.\",\n    \"sectionScores\": {\n        \"formatting\": 90,\n        \"technicalSkills\": 85,\n        \"experience\": 75,\n        \"projects\": 88,\n        \"education\": 80,\n        \"keywords\": 72\n    },\n    \"strengths\": [\n        \"Strong Java and Spring Boot expertise\",\n        \"Good full-stack development skills\",\n        \"Solid project experience\"\n    ],\n    \"weaknesses\": [\n        \"Limited cloud experience (AWS/Azure)\",\n        \"No containerization experience (Docker/Kubernetes)\",\n        \"Missing CI/CD pipeline experience\"\n    ],\n    \"suggestions\": [\n        \"Add AWS experience or get AWS certification\",\n        \"Learn Docker and Kubernetes fundamentals\",\n        \"Set up a CI/CD pipeline using GitHub Actions\",\n        \"Add microservices experience to your resume\",\n        \"Quantify your achievements with metrics\"\n    ],\n    \"recommendedSkills\": [\n        \"AWS Solutions Architect\",\n        \"Docker and Kubernetes\",\n        \"Jenkins or GitHub Actions\",\n        \"Redis or caching technologies\"\n    ],\n    \"atsFriendly\": true,\n    \"analysisConfidence\": 88,\n    \"analyzedAt\": \"2026-07-16T10:30:00\"\n}"
             },
             {
               "name": "Error - No File",
@@ -392,9 +317,14 @@
               "body": "Please upload a valid PDF file."
             },
             {
+              "name": "Error - No Job Description",
+              "code": 400,
+              "body": "Job description is required. Please paste the job description."
+            },
+            {
               "name": "Error - File Too Large",
               "code": 400,
-              "body": "{\n    \"timestamp\": \"2024-01-15T10:30:00\",\n    \"status\": 400,\n    \"error\": \"File Too Large\",\n    \"message\": \"The uploaded file exceeds the maximum allowed size of 5MB.\"\n}"
+              "body": "File size exceeds 5MB limit. Please upload a smaller file."
             },
             {
               "name": "Error - Unauthorized",
