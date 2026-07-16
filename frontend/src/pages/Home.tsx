@@ -1,5 +1,3 @@
-// src/pages/Home.tsx
-
 import React, { useState, useEffect, useRef } from 'react';
 import { FiLoader, FiClock, FiRefreshCw, FiAlertCircle } from 'react-icons/fi';
 import Navbar from '../components/Navbar';
@@ -20,14 +18,12 @@ const Home: React.FC = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
 
-  // Timer for elapsed time
   useEffect(() => {
     if (isLoading || isRetrying) {
       timerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
         setElapsedTime(elapsed);
         
-        // Update status message based on elapsed time
         if (elapsed < 10) {
           setStatusMessage('Waking up the server...');
         } else if (elapsed < 30) {
@@ -55,7 +51,6 @@ const Home: React.FC = () => {
     };
   }, [isLoading, isRetrying]);
 
-  // Function to wake up the backend
   const wakeUpBackend = async () => {
     try {
       setIsRetrying(true);
@@ -77,11 +72,8 @@ const Home: React.FC = () => {
           const healthResult = await resumeApi.healthCheck();
           if (healthResult) {
             isHealthy = true;
-            console.log('✅ Backend is ready!');
           } else {
             consecutiveFailures++;
-            console.log(`Health check attempt ${attempts} failed, retrying...`);
-            
             const waitTime = consecutiveFailures > 3 ? 5000 : 3000;
             if (attempts < maxAttempts) {
               await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -89,7 +81,6 @@ const Home: React.FC = () => {
           }
         } catch (err) {
           consecutiveFailures++;
-          console.log(`Health check attempt ${attempts} error:`, err);
           if (attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 3000));
           }
@@ -97,12 +88,10 @@ const Home: React.FC = () => {
       }
       
       if (!isHealthy) {
-        console.log('❌ Backend wake-up failed after max attempts');
         setIsError(true);
         setErrorMessage('Unable to wake up the server after multiple attempts.');
       }
     } catch (err) {
-      console.error('Unexpected error during wake-up:', err);
       setIsError(true);
       setErrorMessage('An unexpected error occurred while waking up the server.');
     } finally {
@@ -115,7 +104,6 @@ const Home: React.FC = () => {
     }
   };
 
-  // Initial wake-up on component mount
   useEffect(() => {
     wakeUpBackend();
     
@@ -127,14 +115,12 @@ const Home: React.FC = () => {
     };
   }, []);
 
-  // Format time as MM:SS
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Handle retry button click
   const handleRetry = () => {
     setIsLoading(true);
     setIsError(false);
@@ -142,7 +128,6 @@ const Home: React.FC = () => {
     wakeUpBackend();
   };
 
-  // Show loading state while backend is waking up
   if (isLoading || isRetrying) {
     const progress = Math.min((elapsedTime / 90) * 100, 95);
     const isRetryingState = isRetrying && !isLoading;
@@ -195,7 +180,6 @@ const Home: React.FC = () => {
     );
   }
 
-  // Show error state with retry button
   if (isError) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
@@ -249,7 +233,6 @@ const Home: React.FC = () => {
     );
   }
 
-  // Show the actual app when backend is ready
   return (
     <div className="min-h-screen">
       <Navbar />

@@ -1,5 +1,3 @@
-// src/components/HowItWorks.tsx
-
 import React from 'react';
 import { FiUpload, FiCpu, FiBarChart2 } from 'react-icons/fi';
 
@@ -47,7 +45,6 @@ const HowItWorks: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {steps.map((step) => (
             <div key={step.step} className="relative">
-              {/* Connector line */}
               {step.step < 3 && (
                 <div className="hidden md:block absolute top-12 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-0.5 bg-blue-200">
                   <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-blue-400 rounded-full animate-pulse" />

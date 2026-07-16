@@ -1,5 +1,3 @@
-// src/components/UploadResume.tsx
-
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FiUpload, FiFile, FiX, FiArrowRight } from 'react-icons/fi';

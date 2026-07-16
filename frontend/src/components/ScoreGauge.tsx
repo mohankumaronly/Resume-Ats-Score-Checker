@@ -1,5 +1,3 @@
-// src/components/ScoreGauge.tsx
-
 import React from 'react';
 
 interface ScoreGaugeProps {

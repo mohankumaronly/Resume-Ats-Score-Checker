@@ -1,5 +1,3 @@
-// src/components/ResultCard.tsx
-
 import React from 'react';
 import type { ResumeResponse } from '../types/Resume';
 import ScoreGauge from './ScoreGauge';
@@ -148,7 +146,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset }) => {
 
   return (
     <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 animate-fade-in">
-      {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
           Resume Analysis Complete! 🎉
@@ -158,7 +155,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset }) => {
         </p>
       </div>
 
-      {/* Main Score Section */}
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
         <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
           <div className="flex-shrink-0">
@@ -189,7 +185,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset }) => {
         </div>
       </div>
 
-      {/* Section Scores */}
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
           Section-wise Breakdown
@@ -206,7 +201,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset }) => {
         </div>
       </div>
 
-      {/* Blurred Improvements Section */}
       <BlurredImprovements>
         <div className="space-y-4 sm:space-y-6">
           {/* Strengths */}
@@ -218,7 +212,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset }) => {
             sectionKey="strengths"
           />
 
-          {/* Weaknesses */}
           <SectionCard
             title="Weaknesses"
             icon={<FiXCircle className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -227,7 +220,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset }) => {
             sectionKey="weaknesses"
           />
 
-          {/* Suggestions */}
           <SectionCard
             title="Suggestions"
             icon={<FiTrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -236,7 +228,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset }) => {
             sectionKey="suggestions"
           />
 
-          {/* Missing Keywords */}
           <SectionCard
             title="Missing Keywords"
             icon={<FiAlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -245,7 +236,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset }) => {
             sectionKey="missingKeywords"
           />
 
-          {/* Recommended Skills */}
           <SectionCard
             title="Recommended Skills to Learn"
             icon={<FiThumbsUp className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -255,7 +245,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset }) => {
             isTagList={true}
           />
 
-          {/* Grammar Issues */}
           {grammarIssues && grammarIssues.length > 0 && (
             <SectionCard
               title="Grammar Issues"
@@ -268,9 +257,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset }) => {
         </div>
       </BlurredImprovements>
 
-      {/* Action Buttons */}
       <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-        {/* Check Another Resume Button */}
         <button
           onClick={onReset}
           className="flex items-center gap-3 px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm sm:text-base font-semibold w-full sm:w-auto justify-center"

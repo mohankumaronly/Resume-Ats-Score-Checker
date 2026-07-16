@@ -50,7 +50,6 @@ const Navbar: React.FC = () => {
                             </span>
                         </button>
 
-                        {/* Desktop Navigation */}
                         <div className="hidden md:flex items-center gap-4">
                             <button
                                 onClick={() => scrollToSection('features')}

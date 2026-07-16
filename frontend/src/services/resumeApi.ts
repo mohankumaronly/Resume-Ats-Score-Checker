@@ -1,5 +1,3 @@
-// src/services/resumeApi.ts
-
 import axios from 'axios';
 import type { ResumeResponse } from '../types/Resume';
 
@@ -10,18 +8,14 @@ const api = axios.create({
   headers: {
     'Content-Type': 'multipart/form-data',
   },
-  timeout: 60000, // 60 seconds timeout for analysis
+  timeout: 60000,
 });
 
 export const resumeApi = {
-  /**
-   * Check backend health with timeout
-   * Returns true if healthy, false otherwise
-   */
   healthCheck: async (): Promise<boolean> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/resume/health`, {
-        timeout: 10000, // 10 seconds timeout for health check
+        timeout: 10000,
       });
       return response.status === 200;
     } catch (error) {
@@ -30,9 +24,6 @@ export const resumeApi = {
     }
   },
 
-  /**
-   * Upload a resume PDF for analysis
-   */
   analyzeResume: async (file: File): Promise<ResumeResponse> => {
     const formData = new FormData();
     formData.append('resume', file);
@@ -42,7 +33,7 @@ export const resumeApi = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 90000, // 90 seconds for analysis + wake-up
+        timeout: 90000,
       });
       return response.data;
     } catch (error: any) {
