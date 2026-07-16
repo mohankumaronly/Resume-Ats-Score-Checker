@@ -37,6 +37,9 @@ public class GroqService {
         this.restTemplate = restTemplate;
     }
 
+    /**
+     * Sends resume text to Groq API for AI analysis (Existing method)
+     */
     public GroqResponse analyzeResume(String resumeText) throws Exception {
         try {
             String prompt = buildPrompt(resumeText);
@@ -48,6 +51,68 @@ public class GroqService {
         } catch (Exception e) {
             throw new Exception("Error analyzing resume: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * NEW METHOD: Sends resume and job description to Groq API for comparison analysis
+     */
+    public GroqResponse analyzeResumeWithJob(String resumeText, String jobDescription) throws Exception {
+        try {
+            String prompt = buildJobComparisonPrompt(resumeText, jobDescription);
+            GroqRequest request = buildGroqRequest(prompt);
+            HttpEntity<GroqRequest> httpEntity = buildHttpEntity(request);
+            return executeApiCall(httpEntity);
+        } catch (RestClientException e) {
+            throw new Exception("Failed to call Groq API: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new Exception("Error analyzing resume with job description: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * NEW METHOD: Builds the prompt for job comparison analysis
+     */
+    private String buildJobComparisonPrompt(String resumeText, String jobDescription) {
+        return """
+                You are a strict ATS resume evaluator. Compare the resume against the job description.
+
+                JOB DESCRIPTION:
+                %s
+
+                RESUME:
+                %s
+
+                Provide a detailed comparison analysis. Return EXACTLY this JSON format:
+                {
+                    "atsScore": <0-100 - Overall ATS score of the resume>,
+                    "matchScore": <0-100 - How well resume matches the job description>,
+                    "overallRating": "<Excellent|Very Good|Good|Average|Needs Improvement>",
+                    "summary": "<2-3 sentence honest comparison overview>",
+                    "keywordMatchRate": <0-100 - Percentage of job keywords found in resume>,
+                    "missingKeywords": ["<keywords from job description not in resume>"],
+                    "skillsGap": {
+                        "required": ["<skills required by the job>"],
+                        "found": ["<skills found in resume that match job>"],
+                        "missing": ["<skills missing from resume that job requires>"]
+                    },
+                    "experienceMatch": "<Detailed assessment of experience alignment with job requirements>",
+                    "educationMatch": "<Detailed assessment of education alignment with job requirements>",
+                    "sectionScores": {
+                        "formatting": <0-100>,
+                        "technicalSkills": <0-100>,
+                        "experience": <0-100>,
+                        "projects": <0-100>,
+                        "education": <0-100>,
+                        "keywords": <0-100>
+                    },
+                    "strengths": ["<what matches well with the job description>"],
+                    "weaknesses": ["<what doesn't match well with the job description>"],
+                    "suggestions": ["<specific improvements for this specific job>"],
+                    "recommendedSkills": ["<skills to learn for this specific role>"],
+                    "atsFriendly": <true/false>,
+                    "analysisConfidence": <0-100>
+                }
+                """.formatted(jobDescription, resumeText);
     }
 
     private String buildPrompt(String resumeText) {
