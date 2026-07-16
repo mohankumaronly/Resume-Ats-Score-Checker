@@ -1,5 +1,3 @@
-// src/components/Hero.tsx
-
 import React from 'react';
 import { FiCheckCircle, FiUsers, FiCode, FiCpu } from 'react-icons/fi';
 import UploadResume from './UploadResume';

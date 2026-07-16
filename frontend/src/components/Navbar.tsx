@@ -1,5 +1,3 @@
-// src/components/Navbar.tsx
-
 import React, { useState } from 'react';
 import { FiAward, FiLogIn, FiMenu, FiX, FiLogOut } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
@@ -90,7 +88,6 @@ const Navbar: React.FC = () => {
                             )}
                         </div>
 
-                        {/* Mobile Menu Button */}
                         <button
                             onClick={toggleMenu}
                             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -104,7 +101,6 @@ const Navbar: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Mobile Navigation */}
                     <div
                         className={`
                             md:hidden overflow-hidden transition-all duration-300 ease-in-out
@@ -151,8 +147,6 @@ const Navbar: React.FC = () => {
                     </div>
                 </div>
             </nav>
-
-            {/* Auth Modal */}
             {showAuthModal && <AuthModal onClose={closeAuthModal} />}
         </>
     );

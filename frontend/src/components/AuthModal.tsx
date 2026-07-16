@@ -1,5 +1,3 @@
-// src/components/AuthModal.tsx
-
 import React, { useState } from 'react';
 import { FiMail, FiX, FiCheck, FiLoader } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
@@ -104,7 +102,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 relative animate-slide-up">
-                {/* Close Button */}
                 <button
                     onClick={handleClose}
                     className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
@@ -112,7 +109,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                     <FiX className="w-6 h-6" />
                 </button>
 
-                {/* Header */}
                 <div className="text-center mb-6">
                     <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <FiMail className="w-8 h-8 text-blue-600" />
@@ -127,7 +123,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                     </p>
                 </div>
 
-                {/* Error/Success Messages */}
                 {error && (
                     <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
                         {error}
@@ -139,7 +134,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                     </div>
                 )}
 
-                {/* Email Step */}
                 {step === 'email' && (
                     <form onSubmit={handleSendOtp}>
                         <div className="mb-4">
@@ -172,8 +166,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                         </button>
                     </form>
                 )}
-
-                {/* OTP Step */}
                 {step === 'otp' && (
                     <form onSubmit={handleVerifyOtp}>
                         <div className="mb-4">
@@ -225,7 +217,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                     </form>
                 )}
 
-                {/* Footer */}
                 <p className="text-xs text-gray-500 text-center mt-4">
                     By continuing, you agree to our Terms of Service and Privacy Policy
                 </p>

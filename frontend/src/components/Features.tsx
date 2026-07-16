@@ -1,5 +1,3 @@
-// src/components/Features.tsx
-
 import React from 'react';
 import { 
   FiCpu, 

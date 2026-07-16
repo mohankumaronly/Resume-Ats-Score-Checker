@@ -1,5 +1,3 @@
-// src/components/BlurredImprovements.tsx
-
 import React, { useState } from 'react';
 import { FiLock } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
